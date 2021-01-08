@@ -53,30 +53,30 @@ import collections
 user_name = 'egor'
 # user_name = 'Vladimir.Matveev'
 
-path_orig = f'C:/Users/{user_name}/Desktop/mean_graphs/2016_2020.csv'
+
+# path_project = '/mnt/disk_d/УЧЕБА/Самообучение/Програмирование/Python_Projects/Zuenko/Zuenko/py/test/'
+path_project = 'D:/УЧЕБА/Самообучение/Програмирование/Python_Projects/Zuenko/Zuenko/py/test/'
+path_orig = f'{path_project}new_base.csv'
 orig_df = pd.read_csv(path_orig, delimiter=',')
 
 # Пустой Датафрейм с заголовками для присоединения изменённых данных
 df_last = pd.DataFrame(data=None, columns=orig_df.columns)
 
-# Показывает дубликаты
-# df_1 = orig_df.duplicated(subset=['long', 'lat', 'level', 'temp', 'sal', 'oxig'])
-# print(orig_df.loc[df_1])
-
 
 # =============================================================================
 # ОКРУГЛЯЮ КООРДИНАТЫ
 # =============================================================================
-
+orig_df[['zz', 'level']] = orig_df[['zz', 'level']].round()
 orig_df[['long', 'lat']] = orig_df[['long', 'lat']].round(2)
 orig_df[['temp', 'sal', 'oxig']] = orig_df[['temp', 'sal', 'oxig']].round(3)
-orig_df = orig_df.sort_values(by=['Year','long','level'])
+orig_df = orig_df.sort_values(by=['Year', 'Month', 'Day', 'long', 'lat', 'zz', 'level'])
+
 
 def slice_orig_file(df_1, df_2):
     """
     Выделяет из всей выборки данные по одному дню и дальше обрабатывает их, затем собирает все дни в один файл
     """
-    print(orig_df.describe())
+    # print(orig_df.describe())
 
     for year in list(df_1['Year'].unique()):
         for month in list(df_1.query('Year == @year')['Month'].unique()):
@@ -212,6 +212,7 @@ def rounding_levels(df_1):
     # print(res)
     serie_level = pd.Series(res)
     df['level'] = serie_level
+    df = df.sort_values(by=['Year', 'Month', 'Day', 'long', 'lat', 'zz', 'level'])
 
     return df
 
@@ -282,8 +283,8 @@ def number_station(df):
                 # print(dict_1)
 
                 for k, v in grouped_df_dict_2.items():
-                    print(k)
-                    print(v)
+                    # print(k)
+                    # print(v)
                     for level in v['level']:
 
                         # print(level)
@@ -305,7 +306,7 @@ def number_station(df):
                             if max(j) > num_for_nst:
                                 num_for_nst = max(j)
 
-                    print(num_for_nst)
+                    # print(num_for_nst)
                     nst = num_for_nst + 1
 
                 # Беру номера станций из словаря и добавляю их в созданный ранее список
@@ -331,6 +332,7 @@ def number_station(df):
 
 # Округлю координаты
 
+name_csv = 'refactoring_base_new.csv'
 
 # Меняет zz и удалет полные дубликаты
 new_df_last = slice_orig_file(orig_df, df_last)
@@ -339,10 +341,10 @@ new_df_last = slice_orig_file(orig_df, df_last)
 new_df_last = outlier_remove(new_df_last)
 
 # Вынужденная промежуточна запись в csv, без нее не работает округление горизонтов
-new_df_last.to_csv(f'C:/Users/{user_name}/Desktop/mean_graphs/2016_2020.csv', index=False)
+new_df_last.to_csv(f'{path_project}/{name_csv}', index=False)
 
 # Считывает промежуточный вариант из csv и записывает его в новую переменную
-for_rounded_df = pd.read_csv(f'C:/Users/{user_name}/Desktop/mean_graphs/2016_2020.csv', sep=',')
+for_rounded_df = pd.read_csv(f'{path_project}/{name_csv}', sep=',')
 
 # Окргулет горизонты
 new_df_last_1 = rounding_levels(for_rounded_df)
@@ -354,7 +356,7 @@ new_df_last_1 = number_station(new_df_last_1)
 
 
 # Записывает результат в Csv
-new_df_last_1.to_csv(f'C:/Users/{user_name}/Desktop/mean_graphs/2016_2020.csv', index=False)
+new_df_last_1.to_csv(f'{path_project}/{name_csv}', index=False)
 
 # Говорит, что Вы молодец!
 print('\n Mission completed! Good job!\n')
