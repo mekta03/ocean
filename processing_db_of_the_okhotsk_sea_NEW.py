@@ -62,9 +62,8 @@ orig_df = pd.read_csv(path_orig, delimiter=',')
 # Пустой Датафрейм с заголовками для присоединения изменённых данных
 df_last = pd.DataFrame(data=None, columns=orig_df.columns)
 
-
 # =============================================================================
-# ОКРУГЛЯЮ КООРДИНАТЫ
+# ОКРУГЛЯЮ Значения в таблице
 # =============================================================================
 orig_df[['zz', 'level']] = orig_df[['zz', 'level']].round()
 orig_df[['long', 'lat']] = orig_df[['long', 'lat']].round(2)
@@ -76,8 +75,6 @@ def slice_orig_file(df_1, df_2):
     """
     Выделяет из всей выборки данные по одному дню и дальше обрабатывает их, затем собирает все дни в один файл
     """
-    # print(orig_df.describe())
-
     for year in list(df_1['Year'].unique()):
         for month in list(df_1.query('Year == @year')['Month'].unique()):
             for day in list(df_1.query('Year == @year & Month == @month')['Day'].unique()):
@@ -209,7 +206,6 @@ def rounding_levels(df_1):
         elif i == df1.count() - 1:
             res.append(df1[i])
 
-    # print(res)
     serie_level = pd.Series(res)
     df['level'] = serie_level
     df = df.sort_values(by=['Year', 'Month', 'Day', 'long', 'lat', 'zz', 'level'])
@@ -218,16 +214,9 @@ def rounding_levels(df_1):
 
 
 def number_station(df):
-    # def number_station():
-
     """
     Добавляет номер станции, с учетом номера станции в предыдущий день (сквозная нумерация)
     """
-    # path = f'C:/Users/{user_name}/Desktop/New_db/Base_of_okhotsk_5.csv'
-    # orig_df = pd.read_csv(path, sep =',')	# Делаю копию загружаемого файла
-
-    # # orig_df = orig_df.query('Year == 1991 & ( 152 < long < 157) & (55 < lat < 59) & (Day == 15)')
-
     orig_df = df.copy()
     global_lst_nst = []  # Пустой список для записи в него номеров станций
     nst = 1  # Начальный номер станции
@@ -239,14 +228,12 @@ def number_station(df):
                 df_new = orig_df.query('Year == @year & Month == @month & Day == @day')
 
                 # Группирую по координатам и уровню
-                # grouped_df = df_new.groupby(by=['long', 'lat', 'level'])
                 grouped_df = df_new.groupby(by=['long', 'lat', 'zz', 'level'])
 
                 # Преобразую сгруппированный файл в словарь, который сохранет порядок добавления в него элементов
                 grouped_df_dict = dict(list(grouped_df))
 
                 # Делаю выборку по координатам и уровню и группирую по координатам
-                # grouped_df_2 = df_new[['long','lat','level']].groupby(by=['long', 'lat'])
                 grouped_df_2 = df_new[['long', 'lat', 'zz', 'level']].groupby(by=['long', 'lat', 'zz'])
 
                 # Преобразую сгруппированный файл в словарь, который сохранет порядок добавления в него элементов
@@ -254,13 +241,10 @@ def number_station(df):
 
                 # Создаю пустой словарь для записи в него координат - уровня и номеров станций
                 dict_1 = collections.OrderedDict()
-                # dict_1 = dict() # Обычный тип словаря
 
                 # Создаю вложенный словарь: Коодинаты: {Уровень: [Номера станций]}
                 for k, v in grouped_df_dict.items():
                     dict_1[k[:3]] = {}
-
-                # print(dict_1.items())
 
                 """
 				Заполняю созданный вложенный словарь:
@@ -278,35 +262,22 @@ def number_station(df):
 				Затем увеличиваю номер станции на 1.
 
 				"""
-                # print(grouped_df_dict_2.items())
-                # print()
-                # print(dict_1)
 
                 for k, v in grouped_df_dict_2.items():
-                    # print(k)
-                    # print(v)
-                    for level in v['level']:
 
-                        # print(level)
-                        # print(dict_1[k].keys())
+                    for level in v['level']:
                         if level in dict_1[k].keys():
-                            # print(dict_1[k][level])
-                            # print(nst)
                             last_nst = max(dict_1[k][level])
                             dict_1[k][level].append(last_nst + 1)
-                            # print(dict_1[k][level])
-                            # print(nst)
                         else:
                             dict_1[k][level] = [nst]
 
-                    # print(dict_1.values())
                     num_for_nst = 0
                     for i in dict_1.values():
                         for j in i.values():
                             if max(j) > num_for_nst:
                                 num_for_nst = max(j)
 
-                    # print(num_for_nst)
                     nst = num_for_nst + 1
 
                 # Беру номера станций из словаря и добавляю их в созданный ранее список
@@ -323,18 +294,12 @@ def number_station(df):
     # Добавляю в таблицу новую колонку с номерами станций
     orig_df['Stations'] = global_lst_nst
 
-    # Записываю полученный результат в отдельный csv файл
-    # orig_df.to_csv('C:/Users/Egor/Desktop/oxygen_2.0.2/nst_victory.csv', index=False)
-
-    # Вывожу результат на экран
     return orig_df
 
 
-# Округлю координаты
-
 name_csv = 'refactoring_base_new.csv'
 
-# Меняет zz и удалет полные дубликаты
+# Меняет zz и удаляет полные дубликаты
 new_df_last = slice_orig_file(orig_df, df_last)
 
 # Удаляет пустые значения в t,s,oxig и нулевые значения в Oxig
@@ -346,14 +311,11 @@ new_df_last.to_csv(f'{path_project}/{name_csv}', index=False)
 # Считывает промежуточный вариант из csv и записывает его в новую переменную
 for_rounded_df = pd.read_csv(f'{path_project}/{name_csv}', sep=',')
 
-# Окргулет горизонты
+# Окргуляет горизонты
 new_df_last_1 = rounding_levels(for_rounded_df)
 
 # Проставляет номера станций с учетом суточных
 new_df_last_1 = number_station(new_df_last_1)
-
-# new_df_last_1 = number_station()
-
 
 # Записывает результат в Csv
 new_df_last_1.to_csv(f'{path_project}/{name_csv}', index=False)
