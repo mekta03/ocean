@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# TODO: Сделать фильтр по месяцам при удалении выбросов
+# TODO: Переменные названия папок
 
 
 """
@@ -33,15 +33,12 @@ import plotly.graph_objects as go
 from scipy import stats
 
 # Путь к папке проекта
-# path_project = 'C:/Users/vladimir.matveev/Desktop/mean_graphs/'
 path_project = 'D:/УЧЕБА/Самообучение/Програмирование/Python_Projects/Zuenko/Zuenko/py/test/'
 # path_project = '/media/lenovo/D/УЧЕБА/Самообучение/Програмирование/Python_Projects/Zuenko/Zuenko/py/test/'
 # path_project = 'C:/Users/vladimir.matveev/Desktop/Zuenko/Zuenko/py/test/'
 
 
 # Загружает файл БД по Охотскому морю
-# path_orig = f'{path_project}refactoring_base_new.csv'
-# path_orig = 'C:/Users/egor/Desktop/Zuenko/Base_of_okhotsk_3.csv'
 path_orig = f'{path_project}refactoring_base_new.csv'
 
 df_orig = pd.read_csv(path_orig, sep=',')
@@ -107,9 +104,6 @@ dff_1['level'] = np.round(dff_1['level']).astype(int)
 df_area = dff_1.copy()
 
 
-# print(df_area.query('2000 <=Year <= 2020')['zz'].unique().max())
-
-
 def create_map_levels(df, min_yrs, max_yrs):
     """
     Строит карту распределения станций по заданным ранее условиям
@@ -119,8 +113,6 @@ def create_map_levels(df, min_yrs, max_yrs):
 
     min_lvl_name = int(dff[['level']].min())
     max_lvl_name = int(dff[['level']].max())
-    # diff_lvl_name = int(dff[['level']].max() - dff[['level']].min())
-
 
     map_center = go.layout.mapbox.Center(lat=53, lon=149)
 
@@ -185,7 +177,7 @@ def info_stat(df):
     min_param = df[parameter].min()
     max_param = df[parameter].max()
 
-    print('==========================================================')
+    print('========================================================================')
     return f'Размах = {diff},       min_{parameter} = {min_param},      max_{parameter} = {max_param}\n'
 
 
@@ -251,11 +243,8 @@ def z_score(df, lvl):
     """
     # df_1 = df[[parameter]].copy(deep=True)
     # df_Z = df_1[(np.abs(stats.zscore(df_1)) < lvl).all(axis=1)]
-
     # ix_keep = df_Z.index
-
     # df_keep_1 = df.loc[ix_keep]
-
     # return df_keep_1
 
     df_1 = df[[parameter]].copy(deep=True)
@@ -293,7 +282,20 @@ def z_score(df, lvl):
 
 def clean_outliers(df, lvls):
     """
-    Удаляет значения,которые меньше 1 процентиля и больше 99 процентиля
+    Ручное удаление выбросов при помощи z-стандартизации.
+    \n Если размах в выборке больше заданного:
+        \n - показывает карту распеределения станций этой выборки;
+        \n - показывает облако точек выборки, также данные о кол-ве стд отклоений;
+        \n - предлагает на выбор три варианта: ( " ' " - данный символ не вводить)
+            \n 1. Если всё устраивает, то набрать 'ok' и нажать Enter ->
+            \n 2. Если не устраивает, то можно набрать границу кол-ва стд откл.:
+                 '1.5' - верхняя граница;
+                 '-1' - нижняя граница;
+                 '1.5 -1' (через пробел) - верхняя и нижняя граница (порядок не важен, важен знак);
+                 '2 '(после цифры пробел) - граница с двух сторон == ('2 -2').
+            \n 3. 'map' - Если нужна карта станций текущих точек (после удаления выбросов в этой выборке).
+
+   \n Передает дальше общую выборку без выбросов.
     """
     df_old = df.copy()
     dff_concat = pd.DataFrame()
@@ -307,6 +309,8 @@ def clean_outliers(df, lvls):
 
             diff_1 = df_old_1[parameter].max() - df_old_1[parameter].min()
             print(np.round(diff_1, decimals=2))
+
+            # Если размах больше 4, то начинается цикл удаления выбросов
             if diff_1 >= 4:
 
                 df_area_2 = df_old_1[[parameter]].fillna(value=-5.0)
@@ -425,9 +429,6 @@ def create_empty_xlsx_files():
         for k, v in dct_lvl.items():
             path_file = f'{path_directory}/{k}_{v + 1}'
             lst_file_names.append(path_file)
-
-        # str_path = ''
-        # str_path = [f'{k}_{v}' for k,v in dct_lvl.items()]
 
     lst_file_names.append(f'{path_directory}/result_{path_directory}')
 
