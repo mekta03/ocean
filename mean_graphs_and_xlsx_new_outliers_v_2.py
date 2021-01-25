@@ -338,6 +338,9 @@ def clean_outliers(df, lvls):
                         if mode == 'ok':
                             dff_concat = pd.concat([dff_concat, df_keep])
                             break
+                        elif mode == 'map':
+                            create_map_levels(df_keep, min_years, max_years)
+
                         else:
                             mode_1 = mode.split(' ')
                             level = []
@@ -355,7 +358,7 @@ def clean_outliers(df, lvls):
 
                             # Построение облака точек изменненых данных
                             print(df_keep[['level']].describe())
-                            create_map_levels(df_keep, min_years, max_years)
+                            # create_map_levels(df_keep, min_years, max_years)
                             scatter_new(df_keep, min_lvl)
                         continue
                     except (IndexError, ValueError):
