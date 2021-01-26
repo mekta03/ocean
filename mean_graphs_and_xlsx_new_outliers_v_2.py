@@ -227,8 +227,6 @@ def scatter_new(df, lvl):
 
                      # labels = {'z_score_new':'std'}
                      )
-    # title_1 = lvl
-    # title_2 = info_stat(dff)
 
     number_of_month = int(dff['Month'].unique())
     min_year_for_title = min(dff['Year'].unique())
@@ -237,10 +235,8 @@ def scatter_new(df, lvl):
     title_2 = name_of_month(number_of_month)
     title_3 = lvl
     title_4 = info_stat(dff)
-
     title = f'{title_1}    {title_2}    {title_3}m    {title_4}'
 
-    # title = f'{title_1}m              {title_2}'
     fig.update_layout(
         title={
             'text': title,
