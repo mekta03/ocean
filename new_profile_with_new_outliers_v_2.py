@@ -168,6 +168,16 @@ def create_map_levels(df, min_yrs, max_yrs):
                            auto_open=True)
 
 
+def name_of_month(month):
+    """
+    Возвращает название месяца согласно номеру
+    """
+    dct_month = {1:'Январь', 2:'Февраль', 3:'Март', 4:'Апрель', 5:'Май', 6:'Июнь',7:'Июль', 8:'Август',9:'Сентябрь',
+                 10:'Октябрь', 11:'Ноябрь', 12:'Декабрь'}
+
+    return dct_month[month]
+
+
 def info_stat(df):
     """
     Получает df
@@ -180,7 +190,7 @@ def info_stat(df):
     max_param = df[parameter].max()
 
     print('==========================================================')
-    return f'Размах = {diff},       min_{parameter} = {min_param},      max_{parameter} = {max_param}\n'
+    return f'| Размах = {diff} | min_{parameter} = {min_param} | max_{parameter} = {max_param}\n'
 
 
 def scatter_new(df, lvl):
@@ -219,9 +229,16 @@ def scatter_new(df, lvl):
 
                      # labels = {'z_score_new':'std'}
                      )
-    title_1 = lvl
-    title_2 = info_stat(dff)
-    title = f'{title_1}m              {title_2}'
+    # if len(dff['Year']) > 0:
+    print('dff')
+    print(dff['Year'])
+    number_of_month = int(dff['Month'].unique())
+    title_1 = dff['Year'].unique()
+    title_2 = name_of_month(number_of_month)
+    title_3 = lvl
+    title_4 = info_stat(dff)
+
+    title = f'{title_1}    {title_2}    {title_3}m    {title_4}'
     fig.update_layout(
         title={
             'text': title,
