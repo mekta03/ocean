@@ -66,17 +66,20 @@ to_excel = True
 make_interpolation = True
 
 if make_interpolation:
-    filename = f'{path_project}profile_interpolated'
-    if not os.path.exists(filename):
-        os.mkdir(filename)
+    filename_inter = 'profile_interpolated'
+    filename_1 = f'{path_project}{filename_inter}'
+    if not os.path.exists(filename_1):
+        os.mkdir(filename_1)
 else:
-    filename = f'{path_project}profile_not_interpolated'
-    if not os.path.exists(filename):
-        os.mkdir(filename)
+    filename_not_inter = 'profile_not_interpolated'
+    filename_2 = f'{path_project}{filename_not_inter}'
+    if not os.path.exists(filename_2):
+        os.mkdir(filename_2)
 
-filename = f'{path_project}profile_project_files'
-if not os.path.exists(filename):
-    os.mkdir(filename)
+name_project_files = '/project_files/profile_project_files'
+filename_3 = f'{path_project}{name_project_files}'
+if not os.path.exists(filename_3):
+    os.mkdir(filename_3)
 
 # Создает карту распределения станций, True- создает, False - не создает (нужное вписать)
 create_map = True
@@ -133,7 +136,7 @@ def create_map_levels(df, min_yrs, max_yrs):
     #                 "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryOnly/MapServer/tile/{z}/{y}/{x}"]
     #         }])
     #
-    # fig_map.write_html(f'{path_project}profile_project_files/map_stations_area_of_south.html', auto_open=True)
+    # fig_map.write_html(f'{path_project}{name_project_files}/map_stations_area_of_south.html', auto_open=True)
     #
 
     fig_map_all = px.scatter_mapbox(dff, lon="long", lat="lat",
@@ -159,7 +162,7 @@ def create_map_levels(df, min_yrs, max_yrs):
             }])
 
     fig_map_all.write_html(
-        f'{path_project}profile_project_files/{min_lvl_name}_{max_lvl_name}m__coord_{min_lat}_{max_lat}.html',
+        f'{path_project}{name_project_files}/{min_lvl_name}_{max_lvl_name}m__coord_{min_lat}_{max_lat}.html',
         auto_open=True)
 
 
@@ -250,7 +253,7 @@ def scatter_new(df, lvl):
         title_font_color="black",
         title_font_size=25)
 
-    fig.write_html(f'{path_project}profile_project_files/{lvl}_m.html', auto_open=True)
+    fig.write_html(f'{path_project}{name_project_files}/{lvl}_m.html', auto_open=True)
 
 
 def z_score(df, lvl):
@@ -416,28 +419,28 @@ def create_empty_xlsx_files(dct_years):
     """
     df_to_excel = pd.DataFrame()
 
-    inter_all_dec = 'profile_interpolated/all_decade_interpolated'
-    # std_lvl_decade = 'interpolated/std_lvl_all_decade_interpolated'
-    std_lvl_decade = 'profile_interpolated/RESULT_std_lvl_all_decade_interpolated'
-    not_inter_all_dec = 'profile_not_interpolated/all_decade_not_interpolated'
+    inter_all_dec = f'{filename_inter}/all_decade_interpolated'
+    # std_lvl_decade = f'{filename_inter}/std_lvl_all_decade_interpolated'
+    std_lvl_decade = f'{filename_inter}/RESULT_std_lvl_all_decade_interpolated'
 
     if make_interpolation:
         names_file = [inter_all_dec, std_lvl_decade]
 
     else:
-        std_lvl_decade = 'profile_not_interpolated/RESULT_std_lvl_all_decade_not_interpolated'
+        not_inter_all_dec = f'{filename_not_inter}/all_decade_not_interpolated'
+        std_lvl_decade = f'{filename_not_inter}/RESULT_std_lvl_all_decade_not_interpolated'
         names_file = [not_inter_all_dec, std_lvl_decade]
 
     for name1 in names_file:
         excel(df_to_excel, 1, name1, 'w')
 
     for k, v in dct_years.items():
-        inter = f'profile_interpolated/interpolated_{k}'
-        not_inter = f'profile_not_interpolated/not_interpolated_{k}'
+        inter = f'{filename_inter}/interpolated_{k}'
 
         if make_interpolation:
             names_file_1 = inter
         else:
+            not_inter = f'{filename_not_inter}/not_interpolated_{k}'
             names_file_1 = not_inter
 
         for name1 in [names_file_1]:
@@ -518,14 +521,15 @@ def mean_for_nst_year_decade(df, name_of_decade):
         # =============================================================================
         #       Расчет средних значений за год по объединенным значениям со станций
         # =============================================================================
-        path_to_xlsx_all_nst_and_year = f'profile_not_interpolated/not_interpolated_{decade}'
-        path_to_xlsx_all_decade = 'profile_not_interpolated/all_decade_not_interpolated'
 
-        if make_interpolation:
+        path_to_xlsx_all_nst_and_year = f'{filename_inter}/interpolated_{decade}'
+        path_to_xlsx_all_decade = f'{filename_inter}/all_decade_interpolated'
+
+        if not make_interpolation:
             df_all_nst_for_year = interpolation(df_all_nst_for_year, True)
             df_all_nst_for_year = df_all_nst_for_year.reset_index(drop=True)
-            path_to_xlsx_all_nst_and_year = f'profile_interpolated/interpolated_{decade}'
-            path_to_xlsx_all_decade = 'profile_interpolated/all_decade_interpolated'
+            path_to_xlsx_all_nst_and_year = f'{filename_not_inter}/not_interpolated_{decade}'
+            path_to_xlsx_all_decade = f'{filename_not_inter}/all_decade_not_interpolated'
 
         # Расчитывает среднее значение по всем уровням за год
         mean_for_the_year = df_all_nst_for_year.iloc[:, 1:].agg("mean", axis="columns")
@@ -646,9 +650,9 @@ def mean_year_decade_to_std_lvl(start_dec, end_dec):
 
     if to_excel:
         if make_interpolation:
-            excel(df_means_std_level, min_year, 'profile_interpolated/RESULT_std_lvl_all_decade_interpolated', 'a')
+            excel(df_means_std_level, min_year, f'{filename_inter}/RESULT_std_lvl_all_decade_interpolated', 'a')
         else:
-            excel(df_means_std_level, min_year, 'profile_not_interpolated/RESULT_std_lvl_all_decade_not_interpolated',
+            excel(df_means_std_level, min_year, f'{filename_not_inter}/RESULT_std_lvl_all_decade_not_interpolated',
                   'a')
 
     return df_mean_decade_std_lvl
@@ -671,10 +675,10 @@ def graph_excel(dct_years, title_excel, yaxis_title_excel):
     num = 2
 
     if make_interpolation:
-        wb = openpyxl.load_workbook(f'{path_project}profile_interpolated/RESULT_std_lvl_all_decade_interpolated.xlsx')
+        wb = openpyxl.load_workbook(f'{path_project}{filename_inter}/RESULT_std_lvl_all_decade_interpolated.xlsx')
     else:
         wb = openpyxl.load_workbook(
-            f'{path_project}profile_not_interpolated/RESULT_std_lvl_all_decade_not_interpolated.xlsx')
+            f'{path_project}{filename_not_inter}/RESULT_std_lvl_all_decade_not_interpolated.xlsx')
 
     ws = wb['all_decades']
     # ws.font = Font(size=25)
@@ -708,9 +712,9 @@ def graph_excel(dct_years, title_excel, yaxis_title_excel):
     ws.add_chart(chart, "K02")
 
     if make_interpolation:
-        wb.save(f'{path_project}profile_interpolated/RESULT_std_lvl_all_decade_interpolated.xlsx')
+        wb.save(f'{path_project}{filename_inter}/RESULT_std_lvl_all_decade_interpolated.xlsx')
     else:
-        wb.save(f'{path_project}profile_not_interpolated/RESULT_std_lvl_all_decade_not_interpolated.xlsx')
+        wb.save(f'{path_project}{filename_not_inter}/RESULT_std_lvl_all_decade_not_interpolated.xlsx')
 
 
 def graph_profile_of_means():
@@ -752,9 +756,9 @@ def graph_profile_of_means():
 
     if to_excel:
         if make_interpolation:
-            file_name_3 = 'profile_interpolated/RESULT_std_lvl_all_decade_interpolated'
+            file_name_3 = f'{filename_inter}/RESULT_std_lvl_all_decade_interpolated'
         else:
-            file_name_3 = 'profile_not_interpolated/RESULT_std_lvl_all_decade_not_interpolated'
+            file_name_3 = f'{filename_not_inter}/RESULT_std_lvl_all_decade_not_interpolated'
         excel(df_std_lvl_mean_all_decades, 'all_decades', file_name_3, 'a')
 
     if create_graph:
@@ -785,7 +789,7 @@ def graph_profile_of_means():
             title_font_color="black",
             title_font_size=35)
 
-        fig_graph.write_html(f'{path_project}profile_project_files/{min_lat}_{parameter}_profiles.html', auto_open=True)
+        fig_graph.write_html(f'{path_project}{name_project_files}/{min_lat}_{parameter}_profiles.html', auto_open=True)
 
         # =============================================================================
         #       Создает график в Excel
