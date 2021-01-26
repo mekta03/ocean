@@ -33,9 +33,9 @@ import os
 
 # Путь к папке проекта
 # path_project = 'C:/Users/vladimir.matveev/Desktop/Zuenko/Zuenko/py/test/'
-# path_project = 'D:/УЧЕБА/Самообучение/Програмирование/Python_Projects/Zuenko/Zuenko/py/test/'
+path_project = 'D:/УЧЕБА/Самообучение/Програмирование/Python_Projects/Zuenko/Zuenko/py/test/'
+# path_project = '/media/lenovo/D/УЧЕБА/Самообучение/Програмирование/Python_Projects/Zuenko/Zuenko/py/test/'
 
-path_project = '/media/lenovo/D/УЧЕБА/Самообучение/Програмирование/Python_Projects/Zuenko/Zuenko/py/test/'
 
 # Загружает файл БД по Охотскому морю
 path_orig = f'{path_project}refactoring_base_new.csv'
@@ -111,6 +111,9 @@ def create_map_levels(df, min_yrs, max_yrs):
     dff = df.copy()
     dff = df.query("(@min_yrs   <=   Year   <=  @max_yrs)").copy()
 
+    min_lvl_name = int(dff[['level']].min())
+    max_lvl_name = int(dff[['level']].max())
+
     map_center = go.layout.mapbox.Center(lat=53, lon=149)
     #
     # fig_map = px.scatter_mapbox(dff, lon="long", lat="lat", animation_frame="Year",
@@ -161,7 +164,7 @@ def create_map_levels(df, min_yrs, max_yrs):
                     "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryOnly/MapServer/tile/{z}/{y}/{x}"]
             }])
 
-    fig_map_all.write_html(f'{path_project}profile_project_files/map_ALL_stations_area_{min_lat}_{max_lat}.html',
+    fig_map_all.write_html(f'{path_project}profile_project_files/{min_lvl_name}_{max_lvl_name}m__coord_{min_lat}_{max_lat}.html',
                            auto_open=True)
 
 
@@ -275,7 +278,20 @@ def z_score(df, lvl):
 
 def clean_outliers(df, min_yrs, max_yrs):
     """
-    Удаляет значения,которые меньше 1 процентиля и больше 99 процентиля
+    Ручное удаление выбросов при помощи z-стандартизации.
+    \n Если размах в выборке больше заданного:
+        \n - показывает карту распеределения станций этой выборки;
+        \n - показывает облако точек выборки, также данные о кол-ве стд отклоений;
+        \n - предлагает на выбор три варианта: ( " ' " - данный символ не вводить)
+            \n 1. Если всё устраивает, то набрать 'ok' и нажать Enter ->
+            \n 2. Если не устраивает, то можно набрать границу кол-ва стд откл.:
+                 '1.5' - верхняя граница;
+                 '-1' - нижняя граница;
+                 '1.5 -1' (через пробел) - верхняя и нижняя граница (порядок не важен, важен знак);
+                 '2 '(после цифры пробел) - граница с двух сторон == ('2 -2').
+            \n 3. 'map' - Если нужна карта станций текущих точек (после удаления выбросов в этой выборке).
+
+   \n Передает дальше общую выборку без выбросов.
     """
     df_old = df.copy()
     dff_concat = pd.DataFrame()
@@ -318,6 +334,8 @@ def clean_outliers(df, min_yrs, max_yrs):
                         if mode == 'ok':
                             dff_concat = pd.concat([dff_concat, df_keep])
                             break
+                        elif mode == 'map':
+                            create_map_levels(df_keep, min_years, max_years)
                         else:
                             mode_1 = mode.split(' ')
                             level = []
@@ -334,7 +352,7 @@ def clean_outliers(df, min_yrs, max_yrs):
                             print(info_stat(df_keep))
 
                             # Построение облака точек изменненых данных
-                            create_map_levels(df_keep, min_yrs, max_yrs)
+                            # create_map_levels(df_keep, min_yrs, max_yrs)
                             scatter_new(df_keep, min_lvl)
                         continue
                     except (IndexError, ValueError):
