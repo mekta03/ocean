@@ -72,23 +72,31 @@ make_interpolation = True
 if to_excel:
     if make_interpolation:
         filename_inter = 'means_interpolated'
-        filename_1 = f'{path_project}{filename_inter}'
-        if not os.path.exists(filename_1):
-            os.mkdir(filename_1)
+        filename = f'{path_project}{filename_inter}'
+        if not os.path.exists(filename):
+            os.mkdir(filename)
     else:
         filename_not_inter = 'means_not_interpolated'
-        filename_2 = f'{path_project}{filename_not_inter}'
-        if not os.path.exists(filename_2):
-            os.mkdir(filename_2)
+        filename = f'{path_project}{filename_not_inter}'
+        if not os.path.exists(filename):
+            os.mkdir(filename)
 
-name_project_files_1 = '/project_files'
-name_project_files = '/project_files/means_project_files'
-filename_3_1 = f'{path_project}{name_project_files_1}'
-filename_3 = f'{path_project}{name_project_files}'
+    # name_project_files_1 = '/project_files'
+    # name_project_files = 'means_project_files/project_files'
+    name_project_files = 'project_files'
+    filename_3_1 = f'{filename}/{name_project_files}'
+    # filename_3 = f'{path_project}{name_project_files}'
+
+
+if not to_excel:
+    name_project_files_1 = '/project_files'
+    name_project_files = '/project_files/means_project_files'
+    filename_3_1 = f'{path_project}{name_project_files_1}'
+    filename_3 = f'{path_project}{name_project_files}'
 
 if not os.path.exists(filename_3_1):
     os.mkdir(filename_3_1)
-    os.mkdir(filename_3)
+    # os.mkdir(filename_3)
 
 # Имена файлов xlsx
 # all_dec_inter = 'all_dec_inter'
@@ -172,7 +180,7 @@ def create_map_levels(df, min_yrs, max_yrs):
                     "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryOnly/MapServer/tile/{z}/{y}/{x}"]
             }])
 
-    fig_map_all.write_html(f'{path_project}{name_project_files}/{min_lvl_name}_{max_lvl_name}_{min_lat}_{max_lat}.html',
+    fig_map_all.write_html(f'{filename_3_1}/{min_lvl_name}_{max_lvl_name}_{min_lat}_{max_lat}.html',
                            auto_open=True)
 
 
@@ -261,7 +269,7 @@ def scatter_new(df, lvl):
         title_font_color="black",
         title_font_size=25)
 
-    fig.write_html(f'{path_project}{name_project_files}/{lvl}_m.html', auto_open=True)
+    fig.write_html(f'{filename_3_1}/{lvl}_m.html', auto_open=True)
 
 
 def z_score(df, lvl):
@@ -757,7 +765,7 @@ def graph_profile_of_means():
             title_font_color="black",
             title_font_size=30)
 
-        fig_graph.write_html(f'{path_project}{name_project_files}/graph_mean.html', auto_open=True)
+        fig_graph.write_html(f'{filename_3_1}/graph_mean.html', auto_open=True)
 
         # =============================================================================
         #       Создает график в Excel
