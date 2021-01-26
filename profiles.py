@@ -419,11 +419,10 @@ def create_empty_xlsx_files(dct_years):
     """
     df_to_excel = pd.DataFrame()
 
-    inter_all_dec = f'{filename_inter}/all_decade_interpolated'
-    # std_lvl_decade = f'{filename_inter}/std_lvl_all_decade_interpolated'
-    std_lvl_decade = f'{filename_inter}/RESULT_std_lvl_all_decade_interpolated'
-
     if make_interpolation:
+        inter_all_dec = f'{filename_inter}/all_decade_interpolated'
+        # std_lvl_decade = f'{filename_inter}/std_lvl_all_decade_interpolated'
+        std_lvl_decade = f'{filename_inter}/RESULT_std_lvl_all_decade_interpolated'
         names_file = [inter_all_dec, std_lvl_decade]
 
     else:
@@ -435,9 +434,9 @@ def create_empty_xlsx_files(dct_years):
         excel(df_to_excel, 1, name1, 'w')
 
     for k, v in dct_years.items():
-        inter = f'{filename_inter}/interpolated_{k}'
 
         if make_interpolation:
+            inter = f'{filename_inter}/interpolated_{k}'
             names_file_1 = inter
         else:
             not_inter = f'{filename_not_inter}/not_interpolated_{k}'
@@ -522,14 +521,16 @@ def mean_for_nst_year_decade(df, name_of_decade):
         #       Расчет средних значений за год по объединенным значениям со станций
         # =============================================================================
 
-        path_to_xlsx_all_nst_and_year = f'{filename_inter}/interpolated_{decade}'
-        path_to_xlsx_all_decade = f'{filename_inter}/all_decade_interpolated'
+
 
         if not make_interpolation:
-            df_all_nst_for_year = interpolation(df_all_nst_for_year, True)
-            df_all_nst_for_year = df_all_nst_for_year.reset_index(drop=True)
             path_to_xlsx_all_nst_and_year = f'{filename_not_inter}/not_interpolated_{decade}'
             path_to_xlsx_all_decade = f'{filename_not_inter}/all_decade_not_interpolated'
+        else:
+            path_to_xlsx_all_nst_and_year = f'{filename_inter}/interpolated_{decade}'
+            path_to_xlsx_all_decade = f'{filename_inter}/all_decade_interpolated'
+            df_all_nst_for_year = interpolation(df_all_nst_for_year, True)
+            df_all_nst_for_year = df_all_nst_for_year.reset_index(drop=True)
 
         # Расчитывает среднее значение по всем уровням за год
         mean_for_the_year = df_all_nst_for_year.iloc[:, 1:].agg("mean", axis="columns")
