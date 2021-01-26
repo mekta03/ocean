@@ -1,0 +1,9 @@
+/.idea/
+/old_versions/
+/Наработки/
+/test/
+/venv/
+*.log
+*.csv
+*.txt
+*.xlsx
