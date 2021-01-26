@@ -233,7 +233,14 @@ def scatter_new(df, lvl):
     print('dff')
     print(dff['Year'])
     number_of_month = int(dff['Month'].unique())
-    title_1 = dff['Year'].unique()
+    # title_1 = dff['Year'].unique()
+
+    min_year_for_title = min(dff['Year'].unique())
+    max_year_for_title = max(dff['Year'].unique())
+    title_1 = f'c {min_year_for_title} по {max_year_for_title}'
+
+
+
     title_2 = name_of_month(number_of_month)
     title_3 = lvl
     title_4 = info_stat(dff)
