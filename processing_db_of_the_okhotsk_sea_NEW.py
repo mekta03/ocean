@@ -297,7 +297,7 @@ def number_station(df):
     return orig_df
 
 
-name_csv = 'refactoring_base_new.csv'
+name_csv = 'tested.csv'
 
 # Меняет zz и удаляет полные дубликаты
 new_df_last = slice_orig_file(orig_df, df_last)
