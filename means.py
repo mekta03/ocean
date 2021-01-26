@@ -80,10 +80,21 @@ if to_excel:
         filename_2 = f'{path_project}{filename_not_inter}'
         if not os.path.exists(filename_2):
             os.mkdir(filename_2)
+
+name_project_files_1 = '/project_files'
 name_project_files = '/project_files/means_project_files'
+filename_3_1 = f'{path_project}{name_project_files_1}'
 filename_3 = f'{path_project}{name_project_files}'
-if not os.path.exists(filename_3):
+
+if not os.path.exists(filename_3_1):
+    os.mkdir(filename_3_1)
     os.mkdir(filename_3)
+
+# Имена файлов xlsx
+# all_dec_inter = 'all_dec_inter'
+# all_dec_not_inter = 'all_dec_not_inter'
+# rslt_std_inter = 'rslt_std_all_dec_inter'
+# rslt_std_not_inter = 'rslt_std_all_dec_not_inter'
 
 # Создает карту распределения станций, True- создает, False - не создает (нужное вписать)
 create_map = True
@@ -92,7 +103,6 @@ create_map = True
 create_graph = True
 
 # Границы уровней
-
 dct_1 = {i: i + 99 for i in range(600, 1000, 100)}
 dct_2 = {i: i + 199 for i in range(600, 1000, 200)}
 dct_std_lvl = {**dct_1, **dct_2}
@@ -170,8 +180,8 @@ def name_of_month(month):
     """
     Возвращает название месяца согласно номеру
     """
-    dct_month = {1:'Январь', 2:'Февраль', 3:'Март', 4:'Апрель', 5:'Май', 6:'Июнь',7:'Июль', 8:'Август',9:'Сентябрь',
-                 10:'Октябрь', 11:'Ноябрь', 12:'Декабрь'}
+    dct_month = {1: 'Январь', 2: 'Февраль', 3: 'Март', 4: 'Апрель', 5: 'Май', 6: 'Июнь', 7: 'Июль', 8: 'Август',
+                 9: 'Сентябрь', 10: 'Октябрь', 11: 'Ноябрь', 12: 'Декабрь'}
 
     return dct_month[month]
 
@@ -520,7 +530,6 @@ def mean_for_nst_year_lvl(df, min_lvl, max_lvl):
     if not make_interpolation:
         path_to_xlsx_all_nst_and_year = f'{filename_not_inter}/{min_lvl}_{max_lvl + 1}'
         path_to_xlsx_result = f'{filename_not_inter}/result_not_interpolated'
-
 
     for year in df['Year'].unique():
 
