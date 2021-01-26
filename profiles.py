@@ -76,10 +76,19 @@ else:
     if not os.path.exists(filename_2):
         os.mkdir(filename_2)
 
-name_project_files = '/project_files/profile_project_files'
+name_project_files = 'project_files/profile_project_files'
+name_project_files_1 = 'project_files'
+filename_3_1 = f'{path_project}{name_project_files_1}'
 filename_3 = f'{path_project}{name_project_files}'
-if not os.path.exists(filename_3):
+if not os.path.exists(filename_3_1):
+    os.mkdir(filename_3_1)
     os.mkdir(filename_3)
+
+# Имена файлов xlsx
+all_dec_inter = 'all_dec_inter'
+all_dec_not_inter = 'all_dec_not_inter'
+rslt_std_inter = 'rslt_std_all_dec_inter'
+rslt_std_not_inter = 'rslt_std_all_dec_not_inter'
 
 # Создает карту распределения станций, True- создает, False - не создает (нужное вписать)
 create_map = True
@@ -347,7 +356,7 @@ def clean_outliers(df, min_yrs, max_yrs):
 
                 while True:
                     try:
-                        mode = input('Введите уровень затем Enter,\nесли устраивает введите ok, затем Enter:\n')
+                        mode = input('Введите уровень затем Enter,\n если устраивает введите ok, затем Enter:\n')
                         if mode == 'ok':
                             dff_concat = pd.concat([dff_concat, df_keep])
                             break
@@ -420,14 +429,14 @@ def create_empty_xlsx_files(dct_years):
     df_to_excel = pd.DataFrame()
 
     if make_interpolation:
-        inter_all_dec = f'{filename_inter}/all_decade_interpolated'
+        inter_all_dec = f'{filename_inter}/{all_dec_inter}'
         # std_lvl_decade = f'{filename_inter}/std_lvl_all_decade_interpolated'
-        std_lvl_decade = f'{filename_inter}/RESULT_std_lvl_all_decade_interpolated'
+        std_lvl_decade = f'{filename_inter}/{rslt_std_inter}'
         names_file = [inter_all_dec, std_lvl_decade]
 
     else:
-        not_inter_all_dec = f'{filename_not_inter}/all_decade_not_interpolated'
-        std_lvl_decade = f'{filename_not_inter}/RESULT_std_lvl_all_decade_not_interpolated'
+        not_inter_all_dec = f'{filename_not_inter}/{all_dec_not_inter}'
+        std_lvl_decade = f'{filename_not_inter}/{rslt_std_not_inter}'
         names_file = [not_inter_all_dec, std_lvl_decade]
 
     for name1 in names_file:
@@ -436,10 +445,10 @@ def create_empty_xlsx_files(dct_years):
     for k, v in dct_years.items():
 
         if make_interpolation:
-            inter = f'{filename_inter}/interpolated_{k}'
+            inter = f'{filename_inter}/{filename_inter}_{k}'
             names_file_1 = inter
         else:
-            not_inter = f'{filename_not_inter}/not_interpolated_{k}'
+            not_inter = f'{filename_not_inter}/{filename_not_inter}_{k}'
             names_file_1 = not_inter
 
         for name1 in [names_file_1]:
@@ -521,14 +530,12 @@ def mean_for_nst_year_decade(df, name_of_decade):
         #       Расчет средних значений за год по объединенным значениям со станций
         # =============================================================================
 
-
-
         if not make_interpolation:
-            path_to_xlsx_all_nst_and_year = f'{filename_not_inter}/not_interpolated_{decade}'
-            path_to_xlsx_all_decade = f'{filename_not_inter}/all_decade_not_interpolated'
+            path_to_xlsx_all_nst_and_year = f'{filename_not_inter}/{filename_not_inter}_{decade}'
+            path_to_xlsx_all_decade = f'{filename_not_inter}/{all_dec_not_inter}'
         else:
-            path_to_xlsx_all_nst_and_year = f'{filename_inter}/interpolated_{decade}'
-            path_to_xlsx_all_decade = f'{filename_inter}/all_decade_interpolated'
+            path_to_xlsx_all_nst_and_year = f'{filename_inter}/{filename_inter}_{decade}'
+            path_to_xlsx_all_decade = f'{filename_inter}/{all_dec_inter}'
             df_all_nst_for_year = interpolation(df_all_nst_for_year, True)
             df_all_nst_for_year = df_all_nst_for_year.reset_index(drop=True)
 
@@ -651,9 +658,9 @@ def mean_year_decade_to_std_lvl(start_dec, end_dec):
 
     if to_excel:
         if make_interpolation:
-            excel(df_means_std_level, min_year, f'{filename_inter}/RESULT_std_lvl_all_decade_interpolated', 'a')
+            excel(df_means_std_level, min_year, f'{filename_inter}/{rslt_std_inter}', 'a')
         else:
-            excel(df_means_std_level, min_year, f'{filename_not_inter}/RESULT_std_lvl_all_decade_not_interpolated',
+            excel(df_means_std_level, min_year, f'{filename_not_inter}/{rslt_std_not_inter}',
                   'a')
 
     return df_mean_decade_std_lvl
@@ -676,10 +683,10 @@ def graph_excel(dct_years, title_excel, yaxis_title_excel):
     num = 2
 
     if make_interpolation:
-        wb = openpyxl.load_workbook(f'{path_project}{filename_inter}/RESULT_std_lvl_all_decade_interpolated.xlsx')
+        wb = openpyxl.load_workbook(f'{path_project}{filename_inter}/{rslt_std_inter}.xlsx')
     else:
         wb = openpyxl.load_workbook(
-            f'{path_project}{filename_not_inter}/RESULT_std_lvl_all_decade_not_interpolated.xlsx')
+            f'{path_project}{filename_not_inter}/{rslt_std_not_inter}.xlsx')
 
     ws = wb['all_decades']
     # ws.font = Font(size=25)
@@ -713,9 +720,9 @@ def graph_excel(dct_years, title_excel, yaxis_title_excel):
     ws.add_chart(chart, "K02")
 
     if make_interpolation:
-        wb.save(f'{path_project}{filename_inter}/RESULT_std_lvl_all_decade_interpolated.xlsx')
+        wb.save(f'{path_project}{filename_inter}/{rslt_std_inter}.xlsx')
     else:
-        wb.save(f'{path_project}{filename_not_inter}/RESULT_std_lvl_all_decade_not_interpolated.xlsx')
+        wb.save(f'{path_project}{filename_not_inter}/{rslt_std_not_inter}.xlsx')
 
 
 def graph_profile_of_means():
@@ -757,9 +764,9 @@ def graph_profile_of_means():
 
     if to_excel:
         if make_interpolation:
-            file_name_3 = f'{filename_inter}/RESULT_std_lvl_all_decade_interpolated'
+            file_name_3 = f'{filename_inter}/{rslt_std_inter}'
         else:
-            file_name_3 = f'{filename_not_inter}/RESULT_std_lvl_all_decade_not_interpolated'
+            file_name_3 = f'{filename_not_inter}/{rslt_std_not_inter}'
         excel(df_std_lvl_mean_all_decades, 'all_decades', file_name_3, 'a')
 
     if create_graph:
