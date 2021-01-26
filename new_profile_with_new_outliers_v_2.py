@@ -101,9 +101,6 @@ dff_1['level'] = np.round(dff_1['level']).astype(int)
 df_area = dff_1.copy()
 
 
-# print(df_area.query('2000 <=Year <= 2020')['zz'].unique().max())
-
-
 def create_map_levels(df, min_yrs, max_yrs):
     """
     Строит карту распределения станций по заданным ранее условиям
@@ -229,18 +226,13 @@ def scatter_new(df, lvl):
 
                      # labels = {'z_score_new':'std'}
                      )
-    # if len(dff['Year']) > 0:
+
     print('dff')
     print(dff['Year'])
     number_of_month = int(dff['Month'].unique())
-    # title_1 = dff['Year'].unique()
-
     min_year_for_title = min(dff['Year'].unique())
     max_year_for_title = max(dff['Year'].unique())
     title_1 = f'c {min_year_for_title} по {max_year_for_title}'
-
-
-
     title_2 = name_of_month(number_of_month)
     title_3 = lvl
     title_4 = info_stat(dff)
