@@ -24,7 +24,6 @@ Created on Fri Jan 22 13:40:32 2021
 # =============================================================================
 import pandas as pd
 import numpy as np
-import plotly
 import plotly.express as px
 import plotly.graph_objects as go
 import openpyxl
@@ -161,16 +160,17 @@ def create_map_levels(df, min_yrs, max_yrs):
                     "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryOnly/MapServer/tile/{z}/{y}/{x}"]
             }])
 
-    fig_map_all.write_html(f'{path_project}profile_project_files/{min_lvl_name}_{max_lvl_name}m__coord_{min_lat}_{max_lat}.html',
-                           auto_open=True)
+    fig_map_all.write_html(
+        f'{path_project}profile_project_files/{min_lvl_name}_{max_lvl_name}m__coord_{min_lat}_{max_lat}.html',
+        auto_open=True)
 
 
 def name_of_month(month):
     """
     Возвращает название месяца согласно номеру
     """
-    dct_month = {1:'Январь', 2:'Февраль', 3:'Март', 4:'Апрель', 5:'Май', 6:'Июнь',7:'Июль', 8:'Август',9:'Сентябрь',
-                 10:'Октябрь', 11:'Ноябрь', 12:'Декабрь'}
+    dct_month = {1: 'Январь', 2: 'Февраль', 3: 'Март', 4: 'Апрель', 5: 'Май', 6: 'Июнь', 7: 'Июль', 8: 'Август',
+                 9: 'Сентябрь', 10: 'Октябрь', 11: 'Ноябрь', 12: 'Декабрь'}
 
     return dct_month[month]
 
@@ -650,7 +650,8 @@ def mean_year_decade_to_std_lvl(start_dec, end_dec):
         if make_interpolation:
             excel(df_means_std_level, min_year, 'profile_interpolated/RESULT_std_lvl_all_decade_interpolated', 'a')
         else:
-            excel(df_means_std_level, min_year, 'profile_not_interpolated/RESULT_std_lvl_all_decade_not_interpolated', 'a')
+            excel(df_means_std_level, min_year, 'profile_not_interpolated/RESULT_std_lvl_all_decade_not_interpolated',
+                  'a')
 
     return df_mean_decade_std_lvl
 
@@ -665,7 +666,6 @@ def graph_excel(dct_years, title_excel, yaxis_title_excel):
     # from openpyxl.styles import Font, Fill
     from openpyxl import Workbook
     from openpyxl.chart import (
-        LineChart,
         ScatterChart,
         Reference,
         Series)
@@ -675,7 +675,8 @@ def graph_excel(dct_years, title_excel, yaxis_title_excel):
     if make_interpolation:
         wb = openpyxl.load_workbook(f'{path_project}profile_interpolated/RESULT_std_lvl_all_decade_interpolated.xlsx')
     else:
-        wb = openpyxl.load_workbook(f'{path_project}profile_not_interpolated/RESULT_std_lvl_all_decade_not_interpolated.xlsx')
+        wb = openpyxl.load_workbook(
+            f'{path_project}profile_not_interpolated/RESULT_std_lvl_all_decade_not_interpolated.xlsx')
 
     ws = wb['all_decades']
     # ws.font = Font(size=25)
