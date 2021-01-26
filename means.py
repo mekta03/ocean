@@ -81,7 +81,7 @@ if to_excel:
         if not os.path.exists(filename_2):
             os.mkdir(filename_2)
 name_project_files = 'means_project_files'
-filename_3 = f'{path_project}{name_project_files}'
+filename_3 = f'{path_project}\project_files\{name_project_files}'
 if not os.path.exists(filename_3):
     os.mkdir(filename_3)
 
