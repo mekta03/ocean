@@ -134,29 +134,29 @@ def create_map_levels(df, min_yrs, max_yrs):
 
     map_center = go.layout.mapbox.Center(lat=53, lon=149)
 
-    fig_map = px.scatter_mapbox(dff, lon="long", lat="lat", animation_frame="Year",
-                                size=parameter,
-                                hover_name=parameter,
-                                hover_data={"level": True, "zz": True, 'long': True,
-                                            "lat": True, parameter: False, 'Year': True},
-                                size_max=20,
-                                color=parameter,  # Цветовая кодировка в данном случае по горизонту (0 или 1)
-                                color_continuous_scale=["yellow", "red"],
-                                zoom=4,
-                                center=map_center)
+    # fig_map = px.scatter_mapbox(dff, lon="long", lat="lat", animation_frame="Year",
+    #                             size=parameter,
+    #                             hover_name=parameter,
+    #                             hover_data={"level": True, "zz": True, 'long': True,
+    #                                         "lat": True, parameter: False, 'Year': True},
+    #                             size_max=20,
+    #                             color=parameter,  # Цветовая кодировка в данном случае по горизонту (0 или 1)
+    #                             color_continuous_scale=["yellow", "red"],
+    #                             zoom=4,
+    #                             center=map_center)
     
-    fig_map.update_layout(
-        mapbox_style="white-bg",
-        mapbox_layers=[
-            {
-                "below": 'traces',
-                "sourcetype": "raster",
-                "sourceattribution": "United States Geological Survey",
-                "source": [
-                    "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryOnly/MapServer/tile/{z}/{y}/{x}"]
-            }])
+    # fig_map.update_layout(
+    #     mapbox_style="white-bg",
+    #     mapbox_layers=[
+    #         {
+    #             "below": 'traces',
+    #             "sourcetype": "raster",
+    #             "sourceattribution": "United States Geological Survey",
+    #             "source": [
+    #                 "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryOnly/MapServer/tile/{z}/{y}/{x}"]
+    #         }])
     
-    fig_map.write_html(f'{path_project}{name_project_files}/map_stations_area_of_south.html', auto_open=True)
+    # fig_map.write_html(f'{filename_3_1}/map_stations_area_of_south.html', auto_open=True)
 
     fig_map_all = px.scatter_mapbox(dff, lon="long", lat="lat",
                                     size=parameter,
