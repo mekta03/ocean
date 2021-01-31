@@ -1,5 +1,9 @@
 # -*- coding: utf-8 -*-
-# TODO: Переменные названия папок
+
+
+# TODO: не правильно строит карту ( в результатах в excel есть 2019 а на карте нет)
+
+
 """
 Created on Fri Jan 22 14:31:02 2021
 
@@ -34,11 +38,11 @@ from scipy import stats
 path_project = 'D:/УЧЕБА/Самообучение/Програмирование/Python_Projects/Zuenko/Zuenko/py/test/'
 # path_project = '/media/lenovo/D/УЧЕБА/Самообучение/Програмирование/Python_Projects/Zuenko/Zuenko/py/test/'
 # path_project = 'C:/Users/vladimir.matveev/Desktop/Zuenko/Zuenko/py/test/'
-
+# path_project = 'C:/Users/malyg/Desktop/'
 
 # Загружает файл БД по Охотскому морю
 path_orig = f'{path_project}refactoring_base_new.csv'
-
+# path_orig = f'{path_project}tested_2.csv'
 df_orig = pd.read_csv(path_orig, sep=',')
 
 # Устанавливает координаты района
@@ -94,13 +98,7 @@ if not to_excel:
 
 if not os.path.exists(filename_3_1):
     os.mkdir(filename_3_1)
-    # os.mkdir(filename_3)
 
-# Имена файлов xlsx
-# all_dec_inter = 'all_dec_inter'
-# all_dec_not_inter = 'all_dec_not_inter'
-# rslt_std_inter = 'rslt_std_all_dec_inter'
-# rslt_std_not_inter = 'rslt_std_all_dec_not_inter'
 
 # Создает карту распределения станций, True- создает, False - не создает (нужное вписать)
 create_map = True
@@ -120,6 +118,8 @@ dff_1['level'] = np.round(dff_1['level']).astype(int)
 df_area = dff_1.copy()
 
 
+# print(df_area.query('Year == 2019'))
+
 def create_map_levels(df, min_yrs, max_yrs):
     """
     Строит карту распределения станций по заданным ранее условиям
@@ -127,41 +127,43 @@ def create_map_levels(df, min_yrs, max_yrs):
     dff = df.copy()
     dff = df.query("(@min_yrs   <=   Year   <=  @max_yrs)").copy()
 
+    # dff_1 = dff.query('Year in [2018, 2019]')
+
     min_lvl_name = int(dff[['level']].min())
     max_lvl_name = int(dff[['level']].max())
 
     map_center = go.layout.mapbox.Center(lat=53, lon=149)
 
-    # fig_map = px.scatter_mapbox(dff, lon="long", lat="lat", animation_frame="Year",
-    #                             size=parameter,
-    #                             hover_name=parameter,
-    #                             hover_data={"level": True, "zz": True, 'long': True,
-    #                                         "lat": True, parameter: False, 'Year': False},
-    #                             size_max=15,
-    #                             color=parameter,  # Цветовая кодировка в данном случае по горизонту (0 или 1)
-    #                             color_continuous_scale=["yellow", "red"],
-    #                             zoom=4,
-    #                             center=map_center)
-    #
-    # fig_map.update_layout(
-    #     mapbox_style="white-bg",
-    #     mapbox_layers=[
-    #         {
-    #             "below": 'traces',
-    #             "sourcetype": "raster",
-    #             "sourceattribution": "United States Geological Survey",
-    #             "source": [
-    #                 "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryOnly/MapServer/tile/{z}/{y}/{x}"]
-    #         }])
-    #
-    # fig_map.write_html(f'{path_project}{name_project_files}/map_stations_area_of_south.html', auto_open=True)
+    fig_map = px.scatter_mapbox(dff, lon="long", lat="lat", animation_frame="Year",
+                                size=parameter,
+                                hover_name=parameter,
+                                hover_data={"level": True, "zz": True, 'long': True,
+                                            "lat": True, parameter: False, 'Year': True},
+                                size_max=20,
+                                color=parameter,  # Цветовая кодировка в данном случае по горизонту (0 или 1)
+                                color_continuous_scale=["yellow", "red"],
+                                zoom=4,
+                                center=map_center)
+    
+    fig_map.update_layout(
+        mapbox_style="white-bg",
+        mapbox_layers=[
+            {
+                "below": 'traces',
+                "sourcetype": "raster",
+                "sourceattribution": "United States Geological Survey",
+                "source": [
+                    "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryOnly/MapServer/tile/{z}/{y}/{x}"]
+            }])
+    
+    fig_map.write_html(f'{path_project}{name_project_files}/map_stations_area_of_south.html', auto_open=True)
 
     fig_map_all = px.scatter_mapbox(dff, lon="long", lat="lat",
                                     size=parameter,
                                     hover_name=parameter,
                                     hover_data={"level": True, "zz": True, 'long': True, 'Month': True,
                                                 "lat": True, parameter: False, 'Year': True},
-                                    size_max=15,
+                                    # size_max=15,
                                     color=parameter,  # Цветовая кодировка в данном случае по горизонту (0 или 1)
                                     color_continuous_scale=["yellow", "red"],
                                     zoom=4,
@@ -344,7 +346,7 @@ def clean_outliers(df, lvls):
             print(np.round(diff_1, decimals=2))
 
             # Если размах больше 4, то начинается цикл удаления выбросов
-            if diff_1 >= 4:
+            if diff_1 >= 3:
 
                 df_area_2 = df_old_1[[parameter]].fillna(value=-5.0)
                 df_area_1 = df_old_1.copy()
@@ -535,7 +537,7 @@ def mean_for_nst_year_lvl(df, min_lvl, max_lvl):
 
     if not make_interpolation:
         path_to_xlsx_all_nst_and_year = f'{filename_not_inter}/{min_lvl}_{max_lvl + 1}'
-        path_to_xlsx_result = f'{filename_not_inter}/result_not_interpolated'
+        path_to_xlsx_result = f'{filename_not_inter}/result_{filename_not_inter}'
 
     for year in df['Year'].unique():
 
