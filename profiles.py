@@ -136,7 +136,7 @@ def create_map_levels(df, min_yrs, max_yrs):
     #                             hover_name=parameter,
     #                             hover_data={"level": True, "zz": True, 'long': True, 'Stations':True,
     #                                         "lat": True, parameter: False, 'Year': False},
-    #                             size_max=15,
+    #                             size_max=20,
     #                             color=parameter,  # Цветовая кодировка в данном случае по горизонту (0 или 1)
     #                             color_continuous_scale=["yellow", "red"],
     #                             zoom=4,
@@ -162,7 +162,7 @@ def create_map_levels(df, min_yrs, max_yrs):
                                     hover_name=parameter,
                                     hover_data={"level": True, "zz": True, 'long': True, "lat": True, 'Stations': True,
                                                 parameter: False, 'Year': False},
-                                    size_max=15,
+                                    size_max=20,
                                     color=parameter,  # Цветовая кодировка в данном случае по горизонту (0 или 1)
                                     color_continuous_scale=["yellow", "red"],
                                     zoom=4,
