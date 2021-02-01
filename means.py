@@ -406,7 +406,7 @@ def clean_outliers(df, lvls):
             else:
                 dff_concat = pd.concat([dff_concat, df_old_1])
 
-    dff_concat.to_csv(f'{path_project}_dff_concat.csv', index=False)
+    # dff_concat.to_csv(f'{path_project}_dff_concat.csv', index=False)
     return dff_concat
 
 
