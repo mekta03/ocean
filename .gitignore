@@ -3,6 +3,7 @@
 /Наработки/
 /test/
 /venv/
+/.vscode/
 *.log
 *.csv
 *.txt
