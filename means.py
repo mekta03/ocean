@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 
-
-# TODO: не правильно строит карту ( в результатах в excel есть 2019 а на карте нет)
-
+# TODO:
 
 """
 Created on Fri Jan 22 14:31:02 2021
@@ -118,16 +116,12 @@ dff_1['level'] = np.round(dff_1['level']).astype(int)
 df_area = dff_1.copy()
 
 
-# print(df_area.query('Year == 2019'))
-
 def create_map_levels(df, min_yrs, max_yrs):
     """
     Строит карту распределения станций по заданным ранее условиям
     """
     dff = df.copy()
     dff = df.query("(@min_yrs   <=   Year   <=  @max_yrs)").copy()
-
-    # dff_1 = dff.query('Year in [2018, 2019]')
 
     min_lvl_name = int(dff[['level']].min())
     max_lvl_name = int(dff[['level']].max())
