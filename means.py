@@ -659,11 +659,26 @@ def graph_excel(lst_year, title_excel, yaxis_title_excel):
     # chart.y_axis.scaling.min = 1
     # # chart.x_axis.scaling.max = 11
     # chart.y_axis.scaling.max = 2.7
-
+    #========================================================
+    # Расчет максимальных и минимальных значений для осей
     df_excel = pd.DataFrame(ws.values)
-    print('df_excel')
-    print(df_excel)
 
+    num_of_cols = df_excel.iloc[:,1:].shape[1]
+
+    lst_max = []
+    lst_min = []
+
+    for i in range(1, 1+num_of_cols):
+        max_of_series = df_excel.iloc[1:,i].max()
+        min_of_series = df_excel.iloc[1:,i].min()
+        lst_max.append(max_of_series)
+        lst_min.append(min_of_series)
+
+    max_y = np.round(max(lst_max)+1)
+    min_y = np.round(min(lst_min)-1)
+    max_x = max(lst_year)+1
+    min_x = min(lst_year)-1
+    #=============================================================
     num = 2
     max_rows = len(lst_year)
     for i in range(1, 3):
@@ -682,8 +697,12 @@ def graph_excel(lst_year, title_excel, yaxis_title_excel):
 
             series = Series(values, xvalues, title_from_data=True)
             chart.series.append(series)
-
-            chart.y_axis.scaling.max = 1000
+            
+            # Установление макс и мин значений осей
+            chart.y_axis.scaling.max = max_y
+            chart.y_axis.scaling.min = min_y
+            chart.x_axis.scaling.max = max_x
+            chart.x_axis.scaling.min = min_x
 
     ws.add_chart(chart, "K02")
 
