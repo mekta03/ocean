@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 
-
-# TODO: Сортировка листов в excel   !!!!!!!
 # TODO: Построение графиков средних при построении профилей, чтобы не удалять по несколько раз выбросы !!!!!!!!
 
 # TODO: Изменить тип графика чтобы были видны точки
@@ -586,7 +584,7 @@ def mean_for_nst_year_lvl(df, min_lvl, max_lvl):
         # =============================================================================
 
         df_all_nst_and_mean_year = pd.merge(df_all_nst_for_year, df_mean_for_one_year, how='inner', on='level')
-        print(f'{year}')
+        print(f'{min_lvl}m__{year}')
         # print(df_all_nst_and_mean_year)
         # =============================================================================
         #        Расчитывает среднее для уровня и соединяет его со значениями станций и среднего за год
@@ -662,6 +660,10 @@ def graph_excel(lst_year, title_excel, yaxis_title_excel):
     # # chart.x_axis.scaling.max = 11
     # chart.y_axis.scaling.max = 2.7
 
+    df_excel = pd.DataFrame(ws.values)
+    print('df_excel')
+    print(df_excel)
+
     num = 2
     max_rows = len(lst_year)
     for i in range(1, 3):
@@ -680,6 +682,8 @@ def graph_excel(lst_year, title_excel, yaxis_title_excel):
 
             series = Series(values, xvalues, title_from_data=True)
             chart.series.append(series)
+
+            chart.y_axis.scaling.max = 1000
 
     ws.add_chart(chart, "K02")
 
@@ -733,7 +737,7 @@ def graph_profile_of_means():
             x = result['Year']
             y = result[f'{k}_{v}']
 
-            fig_graph.add_trace(go.Scatter(x=x, y=y, name=f'{k}-{v}'))
+            fig_graph.add_trace(go.Scatter(x=x, y=y, name=f'{k}-{v}', mode='lines+markers'))
 
     if to_excel:
         excel(df_result, 'all', path_to_xlsx_result, 'a')
@@ -745,15 +749,15 @@ def graph_profile_of_means():
 
         # Подписи к графику
         if parameter == 'oxig':
-            title = 'Средние показатели растворенного кислорода'
+            title = f'Средние показатели растворенного кислорода {min_lat}-{max_lat}'
             y_axis_title = 'Концентрация растворенного кислорода, мл/л'
 
         elif parameter == 'sal':
-            title = 'Средние показатели солености'
+            title = f'Средние показатели солености {min_lat}-{max_lat}'
             y_axis_title = 'Соленость, е.п.с.'
 
         elif parameter == 'temp':
-            title = 'Средние показатели температуры'
+            title = f'Средние показатели температуры {min_lat}-{max_lat}'
             y_axis_title = 'Температура, С'
 
         fig_graph.update_layout(
