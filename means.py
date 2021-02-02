@@ -79,31 +79,31 @@ make_interpolation = True
 
 if to_excel:
     if make_interpolation:
-        filename_inter = f'means_interpolated_{min_lat}-{max_lat}'
-        filename = f'{path_project}{filename_inter}'
-        if not os.path.exists(filename):
-            os.mkdir(filename)
+        filename_means_inter = f'means_interpolated_{min_lat}-{max_lat}'
+        filename_means = f'{path_project}{filename_means_inter}'
+        if not os.path.exists(filename_means):
+            os.mkdir(filename_means)
     else:
-        filename_not_inter = f'means_not_interpolated_{min_lat}-{max_lat}'
-        filename = f'{path_project}{filename_not_inter}'
-        if not os.path.exists(filename):
-            os.mkdir(filename)
+        filename_means_not_inter = f'means_not_interpolated_{min_lat}-{max_lat}'
+        filename_means = f'{path_project}{filename_means_not_inter}'
+        if not os.path.exists(filename_means):
+            os.mkdir(filename_means)
 
     # name_project_files_1 = '/project_files'
     # name_project_files = 'means_project_files/project_files'
     name_project_files = f'project_files_{min_lat}-{max_lat}'
-    filename_3_1 = f'{filename}/{name_project_files}'
-    # filename_3 = f'{path_project}{name_project_files}'
+    filename_means_3_1 = f'{filename_means}/{name_project_files}'
+    # filename_means_3 = f'{path_project}{name_project_files}'
 
 
 if not to_excel:
     name_project_files_1 = f'/project_files_{min_lat}-{max_lat}'
     name_project_files = f'/project_files_{min_lat}-{max_lat}/means_project_files_{min_lat}-{max_lat}'
-    filename_3_1 = f'{path_project}{name_project_files_1}'
-    filename_3 = f'{path_project}{name_project_files}'
+    filename_means_3_1 = f'{path_project}{name_project_files_1}'
+    filename_means_3 = f'{path_project}{name_project_files}'
 
-if not os.path.exists(filename_3_1):
-    os.mkdir(filename_3_1)
+if not os.path.exists(filename_means_3_1):
+    os.mkdir(filename_means_3_1)
 
 
 # Создает карту распределения станций, True- создает, False - не создает (нужное вписать)
@@ -158,7 +158,7 @@ def create_map_levels(df, min_yrs, max_yrs):
     #                 "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryOnly/MapServer/tile/{z}/{y}/{x}"]
     #         }])
     
-    # fig_map.write_html(f'{filename_3_1}/map_stations_area_of_south.html', auto_open=True)
+    # fig_map.write_html(f'{filename_means_3_1}/map_stations_area_of_south.html', auto_open=True)
 
     fig_map_all = px.scatter_mapbox(dff, lon="long", lat="lat",
                                     # size=parameter,
@@ -182,7 +182,7 @@ def create_map_levels(df, min_yrs, max_yrs):
                     "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryOnly/MapServer/tile/{z}/{y}/{x}"]
             }])
 
-    fig_map_all.write_html(f'{filename_3_1}/{min_lvl_name}_{max_lvl_name}_{min_lat}_{max_lat}.html',
+    fig_map_all.write_html(f'{filename_means_3_1}/{min_lvl_name}_{max_lvl_name}_{min_lat}_{max_lat}.html',
                            auto_open=True)
 
 
@@ -271,7 +271,7 @@ def scatter_new(df, lvl):
         title_font_color="black",
         title_font_size=25)
 
-    fig.write_html(f'{filename_3_1}/{lvl}_m.html', auto_open=True)
+    fig.write_html(f'{filename_means_3_1}/{lvl}_m.html', auto_open=True)
 
 
 def z_score(df, lvl):
@@ -451,10 +451,10 @@ def create_empty_xlsx_files():
     df_to_excel = pd.DataFrame()
 
     lst_file_names = []
-    path_directory = filename_inter
+    path_directory = filename_means_inter
 
     if not make_interpolation:
-        path_directory = filename_not_inter
+        path_directory = filename_means_not_inter
 
     for i in range(1, 3):
 
@@ -534,12 +534,12 @@ def mean_for_nst_year_lvl(df, min_lvl, max_lvl):
 
     df_for_mn_yr_1_lvl = pd.DataFrame()
 
-    path_to_xlsx_all_nst_and_year = f'{filename_inter}/{min_lvl}_{max_lvl + 1}_{min_lat}-{max_lat}'
-    path_to_xlsx_result = f'{filename_inter}/result_{filename_inter}'
+    path_to_xlsx_all_nst_and_year = f'{filename_means_inter}/{min_lvl}_{max_lvl + 1}_{min_lat}-{max_lat}'
+    path_to_xlsx_result = f'{filename_means_inter}/result_{filename_means_inter}'
 
     if not make_interpolation:
-        path_to_xlsx_all_nst_and_year = f'{filename_not_inter}/{min_lvl}_{max_lvl + 1}_{min_lat}-{max_lat}'
-        path_to_xlsx_result = f'{filename_not_inter}/result_{filename_not_inter}'
+        path_to_xlsx_all_nst_and_year = f'{filename_means_not_inter}/{min_lvl}_{max_lvl + 1}_{min_lat}-{max_lat}'
+        path_to_xlsx_result = f'{filename_means_not_inter}/result_{filename_means_not_inter}'
 
     for year in sorted(df['Year'].unique()):
 
@@ -644,7 +644,7 @@ def graph_excel(lst_year, title_excel, yaxis_title_excel):
         Series,
     )
 
-    wb = openpyxl.load_workbook(f'{path_project}{filename_inter}/result_{filename_inter}.xlsx')
+    wb = openpyxl.load_workbook(f'{path_project}{filename_means_inter}/result_{filename_means_inter}.xlsx')
 
     ws = wb['all']
 
@@ -705,7 +705,7 @@ def graph_excel(lst_year, title_excel, yaxis_title_excel):
 
     ws.add_chart(chart, "K02")
 
-    wb.save(f'{path_project}{filename_inter}/result_{filename_inter}.xlsx')
+    wb.save(f'{path_project}{filename_means_inter}/result_{filename_means_inter}.xlsx')
 
 
 def graph_profile_of_means():
@@ -732,10 +732,10 @@ def graph_profile_of_means():
     df_result = pd.DataFrame(data={'Year': lst_years},
                              index=[i for i in range(len(lst_years))])
 
-    path_to_xlsx_result = f'{filename_inter}/result_{filename_inter}'
+    path_to_xlsx_result = f'{filename_means_inter}/result_{filename_means_inter}'
 
     if not make_interpolation:
-        path_to_xlsx_result = f'{filename_not_inter}/result_{filename_not_inter}'
+        path_to_xlsx_result = f'{filename_means_not_inter}/result_{filename_means_not_inter}'
 
     for i in range(1, 3):
 
@@ -792,7 +792,7 @@ def graph_profile_of_means():
             title_font_color="black",
             title_font_size=30)
 
-        fig_graph.write_html(f'{filename_3_1}/graph_mean.html', auto_open=True)
+        fig_graph.write_html(f'{filename_means_3_1}/graph_mean.html', auto_open=True)
 
         # =============================================================================
         #       Создает график в Excel
