@@ -2,10 +2,9 @@
 
 # TODO: Построение графиков средних при построении профилей, чтобы не удалять по несколько раз выбросы !!!!!!!!
 
-# TODO: Изменить тип графика чтобы были видны точки
-# TODO: Изменить названия файлов (добавить широты)
-# TODO: Изменить названия диаграммы (добавить широты)
-
+# TODO: Изменить названия файлов в объединенном варианте ( чтобы избеждать конфликта имен переменных)
+# TODO: Совмещенные графики T S Oxig
+# TODO: При построении карты отрицательные числа
 """
 Created on Fri Jan 22 14:31:02 2021
 
@@ -80,26 +79,26 @@ make_interpolation = True
 
 if to_excel:
     if make_interpolation:
-        filename_inter = 'means_interpolated'
+        filename_inter = f'means_interpolated_{min_lat}-{max_lat}'
         filename = f'{path_project}{filename_inter}'
         if not os.path.exists(filename):
             os.mkdir(filename)
     else:
-        filename_not_inter = 'means_not_interpolated'
+        filename_not_inter = f'means_not_interpolated_{min_lat}-{max_lat}'
         filename = f'{path_project}{filename_not_inter}'
         if not os.path.exists(filename):
             os.mkdir(filename)
 
     # name_project_files_1 = '/project_files'
     # name_project_files = 'means_project_files/project_files'
-    name_project_files = 'project_files'
+    name_project_files = f'project_files_{min_lat}-{max_lat}'
     filename_3_1 = f'{filename}/{name_project_files}'
     # filename_3 = f'{path_project}{name_project_files}'
 
 
 if not to_excel:
-    name_project_files_1 = '/project_files'
-    name_project_files = '/project_files/means_project_files'
+    name_project_files_1 = f'/project_files_{min_lat}-{max_lat}'
+    name_project_files = f'/project_files_{min_lat}-{max_lat}/means_project_files_{min_lat}-{max_lat}'
     filename_3_1 = f'{path_project}{name_project_files_1}'
     filename_3 = f'{path_project}{name_project_files}'
 
@@ -415,11 +414,11 @@ def clean_outliers(df, lvls):
 
 def excel(df, year, name, mode):
     """
-    Записывает данные в xlsx
-    \n df - данные для записи
-    \n year - год, который используется как имя листа
-    \n name - имя файла xlsx
-    \n mode - режим записи, w-перезапись, a-добавление
+    Записывает данные в xlsx\n
+     df - данные для записи\n
+     year - год, который используется как имя листа\n
+     name - имя файла xlsx\n
+     mode - режим записи, w-перезапись, a-добавление
     """
 
     df_to_xlsx = df.copy()
@@ -465,7 +464,7 @@ def create_empty_xlsx_files():
             dct_lvl = dct_2
 
         for k, v in dct_lvl.items():
-            path_file = f'{path_directory}/{k}_{v + 1}'
+            path_file = f'{path_directory}/{k}_{v + 1}_{min_lat}-{max_lat}'
             lst_file_names.append(path_file)
 
     lst_file_names.append(f'{path_directory}/result_{path_directory}')
@@ -535,11 +534,11 @@ def mean_for_nst_year_lvl(df, min_lvl, max_lvl):
 
     df_for_mn_yr_1_lvl = pd.DataFrame()
 
-    path_to_xlsx_all_nst_and_year = f'{filename_inter}/{min_lvl}_{max_lvl + 1}'
+    path_to_xlsx_all_nst_and_year = f'{filename_inter}/{min_lvl}_{max_lvl + 1}_{min_lat}-{max_lat}'
     path_to_xlsx_result = f'{filename_inter}/result_{filename_inter}'
 
     if not make_interpolation:
-        path_to_xlsx_all_nst_and_year = f'{filename_not_inter}/{min_lvl}_{max_lvl + 1}'
+        path_to_xlsx_all_nst_and_year = f'{filename_not_inter}/{min_lvl}_{max_lvl + 1}_{min_lat}-{max_lat}'
         path_to_xlsx_result = f'{filename_not_inter}/result_{filename_not_inter}'
 
     for year in sorted(df['Year'].unique()):
