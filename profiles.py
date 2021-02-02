@@ -41,12 +41,19 @@ path_orig = f'{path_project}refactoring_base_new.csv'
 df_orig = pd.read_csv(path_orig, sep=',')
 
 # Устанавливает координаты района
-min_lat, max_lat = 55, 58.5
+# min_lat, max_lat = 55, 58.5
 # min_lat, max_lat = 51.6, 55
 # min_lat, max_lat = 51, 51.5
-min_long, max_long = 152.9, 157
+# min_long, max_long = 152.9, 157
+
+# Новые границы
+# min_lat, max_lat = 50, 55
+min_lat, max_lat = 55, 58
+# min_lat, max_lat = 50, 58
+min_long, max_long = 152, 155
+
 min_zz = 300
-min_years, max_years = 1980, 1989
+min_years, max_years = 1980, 2020
 
 # Список условий для фильтрации станций
 boundary_area = '(@min_lat      <=  lat     <=  @max_lat) and ' \
@@ -54,7 +61,7 @@ boundary_area = '(@min_lat      <=  lat     <=  @max_lat) and ' \
                 '(@min_zz       <=  zz )'
 
 # Выбор исследуемой характеристики/параметра
-parameter = 'oxig'
+parameter = 'sal'
 
 # Удаление выбросов, True - удаляет, False - не удаляет (нужное вписать)
 outliers_removed = True
@@ -67,12 +74,12 @@ make_interpolation = True
 
 if to_excel:
     if make_interpolation:
-        filename_inter = 'profile_interpolated'
+        filename_inter = f'profile_interpolated_{min_lat}-{max_lat}'
         filename = f'{path_project}{filename_inter}'
         if not os.path.exists(filename):
             os.mkdir(filename)
     else:
-        filename_not_inter = 'profile_not_interpolated'
+        filename_not_inter = f'profile_not_interpolated_{min_lat}-{max_lat}'
         filename = f'{path_project}{filename_not_inter}'
         if not os.path.exists(filename):
             os.mkdir(filename)
@@ -81,7 +88,6 @@ if to_excel:
     name_project_files = 'project_files'
     filename_3_1 = f'{filename}/{name_project_files}'
     # filename_3 = f'{path_project}{name_project_files}'
-
 
 if not to_excel:
     name_project_files = 'project_files/profile_project_files'
@@ -94,10 +100,10 @@ if not os.path.exists(filename_3_1):
     # os.mkdir(filename_3)
 
 # Имена файлов xlsx
-all_dec_inter = 'all_dec_inter'
-all_dec_not_inter = 'all_dec_not_inter'
-rslt_std_inter = 'rslt_std_all_dec_inter'
-rslt_std_not_inter = 'rslt_std_all_dec_not_inter'
+all_dec_inter = f'all_dec_inter_{min_lat}-{max_lat}'
+all_dec_not_inter = f'all_dec_not_inter_{min_lat}-{max_lat}'
+rslt_std_inter = f'rslt_std_all_dec_inter_{min_lat}-{max_lat}'
+rslt_std_not_inter = f'rslt_std_all_dec_not_inter_{min_lat}-{max_lat}'
 
 # Создает карту распределения станций, True- создает, False - не создает (нужное вписать)
 create_map = True
@@ -158,10 +164,10 @@ def create_map_levels(df, min_yrs, max_yrs):
     #
 
     fig_map_all = px.scatter_mapbox(dff, lon="long", lat="lat",
-                                    size=parameter,
+                                    # size=parameter,
                                     hover_name=parameter,
                                     hover_data={"level": True, "zz": True, 'long': True, "lat": True, 'Stations': True,
-                                                parameter: False, 'Year': False},
+                                                parameter: False, 'Year': True},
                                     size_max=20,
                                     color=parameter,  # Цветовая кодировка в данном случае по горизонту (0 или 1)
                                     color_continuous_scale=["yellow", "red"],
@@ -246,8 +252,8 @@ def scatter_new(df, lvl):
                      # labels = {'z_score_new':'std'}
                      )
 
-    print('dff')
-    print(dff['Year'])
+    # print('dff')
+    # print(dff['Year'])
     number_of_month = int(dff['Month'].unique())
     min_year_for_title = min(dff['Year'].unique())
     max_year_for_title = max(dff['Year'].unique())
@@ -292,7 +298,7 @@ def z_score(df, lvl):
                 up = i
 
         df_z = df_2.query('@down <=  z_score <= @up')
-        print(df_z)
+        # print(df_z)
 
     elif len(nums) == 1:
         for i in nums:
@@ -332,14 +338,14 @@ def clean_outliers(df, min_yrs, max_yrs):
     dff_concat = pd.DataFrame()
     for month in sorted(df_old.Month.unique()):
         df_old_month = df_old.query('Month == @month')
-        print(df_old_month)
+        # print(df_old_month)
         for k, v in dct_std_lvl.items():
             min_lvl, max_lvl = k, v
             df_old_1 = df_old_month.query('@min_lvl    <=  level   <=  @max_lvl')
 
             diff_1 = df_old_1[parameter].max() - df_old_1[parameter].min()
             print(np.round(diff_1, decimals=2))
-            if diff_1 >= 3:
+            if diff_1 >= 2:
 
                 df_area_2 = df_old_1[[parameter]].fillna(value=-5.0)
                 df_area_1 = df_old_1.copy()
@@ -395,7 +401,7 @@ def clean_outliers(df, min_yrs, max_yrs):
 
             else:
                 dff_concat = pd.concat([dff_concat, df_old_1])
-
+    # dff_concat.to_csv(f'{path_project}concat.csv', index=False)
     return dff_concat
 
 
@@ -516,7 +522,7 @@ def mean_for_nst_year_decade(df, name_of_decade):
 
     decade = name_of_decade
 
-    for year in df['Year'].unique():
+    for year in sorted(df['Year'].unique()):
 
         dff = df.query('Year == @year').copy()
 
@@ -525,7 +531,7 @@ def mean_for_nst_year_decade(df, name_of_decade):
         # =============================================================================
         #       Объединяет значения со всех станций за год
         # =============================================================================
-
+        print(f'{year}')
         for nst in dff['Stations'].unique():
             new_df = dff.query('Stations == @nst')[['level', parameter]]
             new_df = new_df.rename(columns={parameter: f'nst_{nst}'})
@@ -533,8 +539,8 @@ def mean_for_nst_year_decade(df, name_of_decade):
             df_all_nst_for_year = pd.merge(df_all_nst_for_year, new_df, on='level', how="outer")
             df_all_nst_for_year = df_all_nst_for_year.sort_values(by='level')
             df_all_nst_for_year = df_all_nst_for_year.reset_index(drop=True)
-            print('\ndf_all_nst_for_year\n')
-            print(df_all_nst_for_year)
+        
+            # print(df_all_nst_for_year)
         # =============================================================================
         #       Расчет средних значений за год по объединенным значениям со станций
         # =============================================================================
@@ -618,7 +624,8 @@ def mean_year_decade_to_std_lvl(start_dec, end_dec):
     # Вариант удаления выбросов
     if outliers_removed:
         df_new = clean_outliers(df, min_year, max_year)
-
+    else:
+        df_new = df.copy()
     # Расчитывает ср.знач. за года и десятилетия
     df_means_year_dec = mean_for_nst_year_decade(df_new, min_year)
 
@@ -716,8 +723,8 @@ def graph_excel(dct_years, title_excel, yaxis_title_excel):
     for k, v in dct_years.items():
         values = Reference(ws, min_col=1, min_row=2, max_row=1 + max_rows)
         xvalues = Reference(ws, min_col=num, min_row=2, max_row=1 + max_rows)
-        print('values')
-        print(values)
+        # print('values')
+        # print(values)
         num += 1
 
         series = Series(values, xvalues, title_from_data=False)
@@ -745,7 +752,7 @@ def graph_profile_of_means():
     fig_graph = go.Figure()
 
     # Словарь десятилетий (начало дестилетия: конец дестилетия)
-    dct_years = {i: i + 9 for i in range(min_years, max_years, 10)}
+    dct_years = {i: i + (9 if i < 2010 else 10) for i in range(min_years, max_years, 10)}
 
     if to_excel:
         # Создает пустые файлы xlsx
