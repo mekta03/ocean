@@ -1,6 +1,12 @@
 # -*- coding: utf-8 -*-
 
-# TODO:
+
+# TODO: Сортировка листов в excel   !!!!!!!
+# TODO: Построение графиков средних при построении профилей, чтобы не удалять по несколько раз выбросы !!!!!!!!
+
+# TODO: Изменить тип графика чтобы были видны точки
+# TODO: Изменить названия файлов (добавить широты)
+# TODO: Изменить названия диаграммы (добавить широты)
 
 """
 Created on Fri Jan 22 14:31:02 2021
@@ -23,7 +29,6 @@ Created on Fri Jan 22 14:31:02 2021
 
 """
 import os
-
 import numpy as np
 import openpyxl
 # =============================================================================
@@ -44,12 +49,18 @@ path_orig = f'{path_project}refactoring_base_new.csv'
 df_orig = pd.read_csv(path_orig, sep=',')
 
 # Устанавливает координаты района
-min_lat, max_lat = 51, 59
-# min_lat, max_lat = 51.6, 55
-# min_lat, max_lat = 51, 51.5
-min_long, max_long = 152.9, 157
-min_lvl, max_lvl = 600, 1100
-min_years, max_years = 2008, 2020
+# min_lat, max_lat = 51, 59
+# # min_lat, max_lat = 51.6, 55
+# # min_lat, max_lat = 51, 51.5
+# min_long, max_long = 152.9, 157
+
+min_lat, max_lat = 50, 55
+# min_lat, max_lat = 55, 58
+
+min_long, max_long = 152, 155
+
+min_lvl, max_lvl = 200, 1100
+min_years, max_years = 1980, 2020
 
 # Список условий для фильтрации станций
 boundary_area = '(@min_lat      <=  lat     <=  @max_lat) and ' \
@@ -58,7 +69,7 @@ boundary_area = '(@min_lat      <=  lat     <=  @max_lat) and ' \
                 '(@min_years    <=  Year    <= @max_years)'
 
 # Выбор исследуемой характеристики/параметра
-parameter = 'oxig'
+parameter = 'sal'
 
 # Удаление выбросов, True - удаляет, False - не удаляет (нужное вписать)
 outliers_removed = True
@@ -105,7 +116,7 @@ create_map = True
 create_graph = True
 
 # Границы уровней
-dct_1 = {i: i + 99 for i in range(600, 1000, 100)}
+dct_1 = {i: i + 99 for i in range(200, 1000, 100)}
 dct_2 = {i: i + 199 for i in range(600, 1000, 200)}
 dct_std_lvl = {**dct_1, **dct_2}
 
@@ -153,7 +164,7 @@ def create_map_levels(df, min_yrs, max_yrs):
     # fig_map.write_html(f'{filename_3_1}/map_stations_area_of_south.html', auto_open=True)
 
     fig_map_all = px.scatter_mapbox(dff, lon="long", lat="lat",
-                                    size=parameter,
+                                    # size=parameter,
                                     hover_name=parameter,
                                     hover_data={"level": True, "zz": True, 'long': True, 'Month': True,
                                                 "lat": True, parameter: False, 'Year': True},
@@ -340,7 +351,7 @@ def clean_outliers(df, lvls):
             print(np.round(diff_1, decimals=2))
 
             # Если размах больше 4, то начинается цикл удаления выбросов
-            if diff_1 >= 3:
+            if diff_1 >= 1:
 
                 df_area_2 = df_old_1[[parameter]].fillna(value=-5.0)
                 df_area_1 = df_old_1.copy()
