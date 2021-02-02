@@ -72,7 +72,7 @@ boundary_area = '(@min_lat      <=  lat     <=  @max_lat) and ' \
 parameter = 'sal'
 
 # Удаление выбросов, True - удаляет, False - не удаляет (нужное вписать)
-outliers_removed = True
+outliers_removed = False
 
 # Записывает результаты в excel, True- записывает, False - не записывает (нужное вписать)
 to_excel = True
@@ -301,7 +301,7 @@ def z_score(df, lvl):
                 up = i
 
         df_Z = df_2.query('@down <=  z_score <= @up')
-        print(df_Z)
+        # print(df_Z)
 
     elif len(nums) == 1:
         for i in nums:
@@ -341,7 +341,7 @@ def clean_outliers(df, lvls):
     dff_concat = pd.DataFrame()
     for month in sorted(df_old.Month.unique()):
         df_old_month = df_old.query('Month == @month')
-        print(df_old_month)
+        # print(df_old_month)
 
         for k, v in lvls.items():
             min_lvl, max_lvl = k, v
@@ -401,7 +401,7 @@ def clean_outliers(df, lvls):
                             print(info_stat(df_keep))
 
                             # Построение облака точек изменненых данных
-                            print(df_keep[['level']].describe())
+                            # print(df_keep[['level']].describe())
                             # create_map_levels(df_keep, min_years, max_years)
                             scatter_new(df_keep, min_lvl)
                         continue
@@ -544,7 +544,7 @@ def mean_for_nst_year_lvl(df, min_lvl, max_lvl):
         path_to_xlsx_all_nst_and_year = f'{filename_not_inter}/{min_lvl}_{max_lvl + 1}'
         path_to_xlsx_result = f'{filename_not_inter}/result_{filename_not_inter}'
 
-    for year in df['Year'].unique():
+    for year in sorted(df['Year'].unique()):
 
         dff = df.query('Year == @year').copy()
 
@@ -586,8 +586,8 @@ def mean_for_nst_year_lvl(df, min_lvl, max_lvl):
         # =============================================================================
 
         df_all_nst_and_mean_year = pd.merge(df_all_nst_for_year, df_mean_for_one_year, how='inner', on='level')
-        print('\ndf_all_nst_and_mean_year')
-        print(df_all_nst_and_mean_year)
+        print(f'{year}')
+        # print(df_all_nst_and_mean_year)
         # =============================================================================
         #        Расчитывает среднее для уровня и соединяет его со значениями станций и среднего за год
         # =============================================================================
@@ -674,8 +674,8 @@ def graph_excel(lst_year, title_excel, yaxis_title_excel):
         for k, v in dct_lvl.items():
             xvalues = Reference(ws, min_col=1, min_row=2, max_row=1 + max_rows)
             values = Reference(ws, min_col=num, min_row=1, max_row=1 + max_rows)
-            print('values')
-            print(values)
+            # print('values')
+            # print(values)
             num += 1
 
             series = Series(values, xvalues, title_from_data=True)
@@ -693,7 +693,7 @@ def graph_profile_of_means():
 
     df = df_area.copy()
     fig_graph = go.Figure()
-    print(df)
+    # print(df)
     # Карта распределения станций
     if create_map:
         create_map_levels(df, min_years, max_years)
