@@ -64,7 +64,7 @@ boundary_area = '(@min_lat      <=  lat     <=  @max_lat) and ' \
 parameter = 'sal'
 
 # Удаление выбросов, True - удаляет, False - не удаляет (нужное вписать)
-outliers_removed = True
+outliers_removed = False
 
 # Записывает результаты в excel, True- записывает, False - не записывает (нужное вписать)
 to_excel = True
@@ -718,6 +718,27 @@ def graph_excel(dct_years, title_excel, yaxis_title_excel):
     # chart.x_axis.scaling.max = 11
     # chart.y_axis.scaling.max = 2.7
 
+    #========================================================
+    # Расчет максимальных и минимальных значений для осей
+    df_excel = pd.DataFrame(ws.values)
+
+    num_of_cols = df_excel.iloc[:,1:].shape[1]
+
+    lst_max = []
+    lst_min = []
+
+    for i in range(1, 1+num_of_cols):
+        max_of_series = df_excel.iloc[1:,i].max()
+        min_of_series = df_excel.iloc[1:,i].min()
+        lst_max.append(max_of_series)
+        lst_min.append(min_of_series)
+
+    max_x = np.round(max(lst_max)+1)
+    min_x = np.round(min(lst_min)-1)
+    max_y = 1000
+    min_y = 0
+    #=============================================================
+
     max_rows = len(dct_std_lvl.keys())
 
     for k, v in dct_years.items():
@@ -731,7 +752,12 @@ def graph_excel(dct_years, title_excel, yaxis_title_excel):
 
         chart.series.append(series)
         chart.y_axis.scaling.orientation = "maxMin"
-        chart.y_axis.scaling.max = 1000
+        
+        # Установление макс и мин значений осей
+        chart.y_axis.scaling.max = max_y
+        chart.y_axis.scaling.min = min_y
+        chart.x_axis.scaling.max = max_x
+        chart.x_axis.scaling.min = min_x
 
     ws.add_chart(chart, "K02")
 
