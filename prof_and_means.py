@@ -52,7 +52,8 @@ min_lat, max_lat = 55, 58
 # min_lat, max_lat = 50, 58
 min_long, max_long = 152, 155
 
-min_zz = 300
+# min_zz = 300
+min_zz = 0
 min_years, max_years = 1980, 2020
 
 # Список условий для фильтрации станций
@@ -64,7 +65,7 @@ boundary_area = '(@min_lat      <=  lat     <=  @max_lat) and ' \
 parameter = 'sal'
 
 # Удаление выбросов, True - удаляет, False - не удаляет (нужное вписать)
-outliers_removed = False
+outliers_removed = True
 
 # Записывает результаты в excel, True- записывает, False - не записывает (нужное вписать)
 to_excel = True
@@ -72,10 +73,14 @@ to_excel = True
 # Делает интерполяцию, True - делает, False - не делает (нужное вписать)
 make_interpolation = True
 
+make_means = True
+
+
 if to_excel:
     if make_interpolation:
         filename_prof_inter = f'profile_interpolated_{min_lat}-{max_lat}'
         filename_prof = f'{path_project}{filename_prof_inter}'
+       
         if not os.path.exists(filename_prof):
             os.mkdir(filename_prof)
     else:
@@ -118,14 +123,49 @@ dct_3 = {i: i + 49 for i in range(50, 251, 50)}
 dct_4 = {i: i + 99 for i in range(300, 1001, 100)}
 dct_std_lvl = {**dct_1, **dct_2, **dct_3, **dct_4}
 
+
+if make_means:
+    if to_excel:
+        if make_interpolation:
+            filename_means_inter = f'means_interpolated_{min_lat}-{max_lat}'
+            filename_means = f'{path_project}{filename_means_inter}'
+            if not os.path.exists(filename_means):
+                os.mkdir(filename_means)
+        else:
+            filename_means_not_inter = f'means_not_interpolated_{min_lat}-{max_lat}'
+            filename_means = f'{path_project}{filename_means_not_inter}'
+            if not os.path.exists(filename_means):
+                os.mkdir(filename_means)
+
+        name_project_files = f'project_files_{min_lat}-{max_lat}'
+        filename_means_3_1 = f'{filename_means}/{name_project_files}'
+        
+    if not to_excel:
+        name_project_files_1 = f'/project_files_{min_lat}-{max_lat}'
+        name_project_files = f'/project_files_{min_lat}-{max_lat}/means_project_files_{min_lat}-{max_lat}'
+        filename_means_3_1 = f'{path_project}{name_project_files_1}'
+        filename_means_3 = f'{path_project}{name_project_files}'
+
+    if not os.path.exists(filename_means_3_1):
+        os.mkdir(filename_means_3_1)
+
+    # Границы уровней
+    dct_means_1 = {i: i + 99 for i in range(200, 1000, 100)}
+    dct_means_2 = {i: i + 199 for i in range(600, 1000, 200)}
+
+
 # Данные из БД по Охотскому морю по исследуемому району
 df_area = df_orig.query(boundary_area)
 dff_1 = df_area.copy()
 dff_1['level'] = np.round(dff_1['level']).astype(int)
 df_area = dff_1.copy()
 
+# Таблица для записи в нее значений без выбросов
+df_for_mean_without_outliers = pd.DataFrame(columns=df_area.columns)
+
 
 def create_map_levels(df, min_yrs, max_yrs):
+    # TODO: Обратить внимание на имена и пути файлов !!!!!!!!
     """
     Строит карту распределения станций по заданным ранее условиям
     """
@@ -216,6 +256,8 @@ def info_stat(df):
 
 
 def scatter_new(df, lvl):
+    # TODO: Обратить внимание на имена и пути файлов !!!!!!!!
+
     """
     Выводит на экран облако точек из полученных данных
     """
@@ -469,6 +511,30 @@ def create_empty_xlsx_files(dct_years):
         for name1 in [names_file_1]:
             excel(df_to_excel, 1, name1, 'w')
 
+    if make_means:
+            lst_file_names = []
+            path_directory = filename_means_inter
+
+            if not make_interpolation:
+                path_directory = filename_means_not_inter
+
+            for i in range(1, 3):
+
+                if i == 1:
+                    dct_means_lvl = dct_means_1
+                else:
+                    dct_means_lvl = dct_means_2
+
+                for k, v in dct_means_lvl.items():
+                    path_file = f'{path_directory}/{k}_{v + 1}_{min_lat}-{max_lat}'
+                    lst_file_names.append(path_file)
+
+            lst_file_names.append(f'{path_directory}/result_{path_directory}')
+
+            for f_name in lst_file_names:
+                excel(df_to_excel, 1, f_name, 'w')
+
+
 
 def interpolation(df, all_cols):
     """
@@ -626,6 +692,12 @@ def mean_year_decade_to_std_lvl(start_dec, end_dec):
         df_new = clean_outliers(df, min_year, max_year)
     else:
         df_new = df.copy()
+
+    # Записываю значения без выбросов в df (чтобы были значения за все года, а не только за отдельную декаду),
+    #  который затем можно будет передать для построения графика средних
+    global df_for_mean_without_outliers
+    df_for_mean_without_outliers = pd.concat([df_for_mean_without_outliers, df_new.iloc[1:,:]])
+
     # Расчитывает ср.знач. за года и десятилетия
     df_means_year_dec = mean_for_nst_year_decade(df_new, min_year)
 
@@ -680,6 +752,136 @@ def mean_year_decade_to_std_lvl(start_dec, end_dec):
                   'a')
 
     return df_mean_decade_std_lvl
+
+
+def mean_for_nst_year_lvl(df, min_lvl_m, max_lvl_m):
+    """
+   
+    1. Объединяет значения со всех станций за определенный год;\n
+    2. Расчитывает среднее значение за год;\n
+    3. Объединяет средние за год;\n
+    4. Расчитывает среднее среднего;\n
+    5. Объединяет средние за год и среднее среднего.\n
+    6. Объединяет все средние средних за год.\n
+    7. Создает таблицу (Года, Средние значения, с пробелами)
+    
+    df - данные для обработки\n
+    min_lvl - верхняя граница слоя\n
+    max_lvl - нижняя граница слоя\n
+
+    """
+    min_lvl_means = min_lvl_m
+    max_lvl_means = max_lvl_m
+    print('min_lvl_means')
+    print(min_lvl_means)
+    print()
+    print('max_lvl_means')
+    print(max_lvl_means)
+    print()
+    df = df.copy()
+
+    area_lvl = ('@min_lvl_means  <=  level  <=  @max_lvl_means')
+
+    df = df.query(area_lvl)
+    print('df')
+    print(df)
+    print()
+    df_for_mn_yr_1_lvl = pd.DataFrame()
+
+    path_to_xlsx_all_nst_and_year = f'{filename_means_inter}/{min_lvl_means}_{max_lvl_means + 1}_{min_lat}-{max_lat}'
+    path_to_xlsx_result = f'{filename_means_inter}/result_{filename_means_inter}'
+
+    if not make_interpolation:
+        path_to_xlsx_all_nst_and_year = f'{filename_means_not_inter}/{min_lvl_means}_{max_lvl_means + 1}_{min_lat}-{max_lat}'
+        path_to_xlsx_result = f'{filename_means_not_inter}/result_{filename_means_not_inter}'
+
+    for year in sorted(df['Year'].unique()):
+
+        dff = df.query('Year == @year').copy()
+
+        df_all_nst_for_year_1 = pd.DataFrame(columns=['level'])
+
+        # =============================================================================
+        #       Объединяет значения со всех станций за год
+        # =============================================================================
+
+        for nst in dff['Stations'].unique():
+            new_df = dff.query('Stations == @nst')[['level', parameter]]
+            new_df = new_df.rename(columns={parameter: f'nst_{nst}'})
+
+            df_all_nst_for_year_1 = pd.merge(df_all_nst_for_year_1, new_df, on='level', how="outer")
+            df_all_nst_for_year_1 = df_all_nst_for_year_1.sort_values(by='level')
+            df_all_nst_for_year_1 = df_all_nst_for_year_1.reset_index(drop=True)
+
+        # =============================================================================
+        #       Расчет средних значений за год по объединенным значениям со станций
+        # =============================================================================
+
+        if make_interpolation:
+            df_all_nst_for_year_1 = interpolation(df_all_nst_for_year_1, True)
+            df_all_nst_for_year_1 = df_all_nst_for_year_1.reset_index(drop=True)
+
+        # Расчитывает среднее значение по всем уровням за год
+        mean_for_the_year = df_all_nst_for_year_1.iloc[:, 1:].agg("mean", axis="columns")
+        mean_for_the_year = mean_for_the_year.round(2)
+
+        # lst_lvls = df_all_nst_for_year_1['level'].round()
+        lst_lvls = df_all_nst_for_year_1['level']
+
+        # Создает таблицу с уровнями и средним значением за год по этим уровням
+        df_mean_for_one_year = pd.DataFrame(data={'level': lst_lvls,
+                                                  f'mean_{year}': mean_for_the_year},
+                                            index=[i for i in range(len(df_all_nst_for_year_1['level']))])
+
+        # =============================================================================
+        #       Соединяет значения со всех станций со средним за год
+        # =============================================================================
+
+        df_all_nst_and_mean_year = pd.merge(df_all_nst_for_year_1, df_mean_for_one_year, how='inner', on='level')
+        print(f'{min_lvl_means}m__{year}')
+        # print(df_all_nst_and_mean_year)
+        # =============================================================================
+        #        Расчитывает среднее для уровня и соединяет его со значениями станций и среднего за год
+        # =============================================================================
+
+        # ЭТО СРЕДНЕЕ_2
+        mn_yr_1_lvl = pd.Series(data=df_all_nst_and_mean_year[f'mean_{year}'].mean(), index=[0], name=f'{year}')
+
+        mn_yr_1_lvl = mn_yr_1_lvl.round(2)
+
+        df_all_nst_and_mean_year = pd.concat([df_all_nst_and_mean_year, mn_yr_1_lvl], axis=1)
+        df_all_nst_and_mean_year = df_all_nst_and_mean_year.round(2)
+
+        #  Соединеят все средние_2
+        df_for_mn_yr_1_lvl = pd.concat([df_for_mn_yr_1_lvl, mn_yr_1_lvl], axis=1)
+
+        if to_excel:
+            excel(df_all_nst_and_mean_year, year, path_to_xlsx_all_nst_and_year, 'a')
+
+    #  Переворачивает объедиенные средние_2
+    only_mn_yr_1_lvl = df_for_mn_yr_1_lvl.stack()
+
+    only_mn_yr_1_lvl = only_mn_yr_1_lvl.reset_index(drop=True)
+
+    lst_yr = df['Year'].unique()
+
+    # Создает таблицу столбцы года и уровень
+    df_only_mn_yr_1_lvl = pd.DataFrame(data={'Year': lst_yr,
+                                             f'{min_lvl_means}_{max_lvl_means}': only_mn_yr_1_lvl
+                                             },
+                                       index=[i for i in range(len(lst_yr))])
+
+    lst_yr_nan = [i for i in range(min_years, max_years + 1)]
+
+    df_yr_nan = pd.DataFrame(data={'Year': lst_yr_nan},
+                             index=[i for i in range(len(lst_yr_nan))])
+
+    df_yr_nan = pd.merge(df_yr_nan, df_only_mn_yr_1_lvl, on='Year', how='outer')
+
+    if to_excel:
+        excel(df_yr_nan, 'all_years', path_to_xlsx_all_nst_and_year, 'a')
+
+    return df_yr_nan
 
 
 def graph_excel(dct_years, title_excel, yaxis_title_excel):
@@ -767,10 +969,187 @@ def graph_excel(dct_years, title_excel, yaxis_title_excel):
         wb.save(f'{path_project}{filename_prof_not_inter}/{rslt_std_not_inter}.xlsx')
 
 
+def graph_excel_means(lst_year, title_excel, yaxis_title_excel):
+    """
+    В итоговом файле xlsx, создает диаграмму\n
+    lst_year - для количества столбцов, по которым строится график\n
+    title_excel - название диаграммы\n
+    yaxis_title_excel - название оси Y\n
+    """
+    from openpyxl import Workbook
+    from openpyxl.chart import (
+        LineChart,
+        ScatterChart,
+        Reference,
+        Series,
+    )
+
+    wb = openpyxl.load_workbook(f'{path_project}{filename_means_inter}/result_{filename_means_inter}.xlsx')
+
+    ws = wb['all']
+
+    chart = ScatterChart()
+    chart.title = title_excel
+    # chart.style = 2
+    chart.x_axis.title = 'Года'
+    chart.y_axis.title = yaxis_title_excel
+
+    # chart.x_axis.scaling.min = 0
+    # chart.y_axis.scaling.min = 1
+    # # chart.x_axis.scaling.max = 11
+    # chart.y_axis.scaling.max = 2.7
+    #========================================================
+    # Расчет максимальных и минимальных значений для осей
+    df_excel = pd.DataFrame(ws.values)
+
+    num_of_cols = df_excel.iloc[:,1:].shape[1]
+
+    lst_max = []
+    lst_min = []
+
+    for i in range(1, 1+num_of_cols):
+        max_of_series = df_excel.iloc[1:,i].max()
+        min_of_series = df_excel.iloc[1:,i].min()
+        lst_max.append(max_of_series)
+        lst_min.append(min_of_series)
+
+    max_y = np.round(max(lst_max)+1)
+    min_y = np.round(min(lst_min)-1)
+    max_x = max(lst_year)+1
+    min_x = min(lst_year)-1
+    #=============================================================
+    num = 2
+    max_rows = len(lst_year)
+    for i in range(1, 3):
+
+        if i == 1:
+            dct_means_lvl = dct_means_1
+        else:
+            dct_means_lvl = dct_means_2
+
+        for k, v in dct_means_lvl.items():
+            xvalues = Reference(ws, min_col=1, min_row=2, max_row=1 + max_rows)
+            values = Reference(ws, min_col=num, min_row=1, max_row=1 + max_rows)
+            # print('values')
+            # print(values)
+            num += 1
+
+            series = Series(values, xvalues, title_from_data=True)
+            chart.series.append(series)
+            
+            # Установление макс и мин значений осей
+            chart.y_axis.scaling.max = max_y
+            chart.y_axis.scaling.min = min_y
+            chart.x_axis.scaling.max = max_x
+            chart.x_axis.scaling.min = min_x
+
+    ws.add_chart(chart, "K02")
+
+    wb.save(f'{path_project}{filename_means_inter}/result_{filename_means_inter}.xlsx')
+
+
 def graph_profile_of_means():
+    """
+    Создает график средних годовых значений выбранного параметра
+    """
+
+    df = df_for_mean_without_outliers.copy()
+    print('df_for_mean_without_outliers')
+    print(df)
+    df = df.sort_values(by=['Year', 'Month', 'Day', 'long', 'lat', 'level'])
+    fig_graph = go.Figure()
+    # print(df)
+    # Карта распределения станций
+    if create_map:
+        create_map_levels(df, min_years, max_years)
+
+    # if outliers_removed:
+    #     df = clean_outliers(df)
+
+    # if to_excel:
+    #     # Создает пустые файлы xlsx
+    #     create_empty_xlsx_files()
+
+    lst_years = [i for i in range(min_years, max_years + 1)]
+
+    df_result = pd.DataFrame(data={'Year': lst_years},
+                             index=[i for i in range(len(lst_years))])
+
+    path_to_xlsx_result = f'{filename_means_inter}/result_{filename_means_inter}'
+
+    if not make_interpolation:
+        path_to_xlsx_result = f'{filename_means_not_inter}/result_{filename_means_not_inter}'
+
+    for i in range(1, 3):
+
+        if i == 1:
+            dct_means_lvl = dct_means_1
+        else:
+            dct_means_lvl = dct_means_2
+
+        # if outliers_removed:
+        #     df = clean_outliers(df, dct_means_lvl)
+
+        for k, v in dct_means_lvl.items():
+            result = mean_for_nst_year_lvl(df, k, v)
+            # graph_excel(result,k,v)
+            df_result = pd.merge(df_result, result, on='Year', how='outer')
+
+            x = result['Year']
+            y = result[f'{k}_{v}']
+
+            fig_graph.add_trace(go.Scatter(x=x, y=y, name=f'{k}-{v}', mode='lines+markers'))
+
+    if to_excel:
+        excel(df_result, 'all', path_to_xlsx_result, 'a')
+
+    if create_graph:
+        # Подписи к графику
+        min_lvl = min([i for i in dct_means_1.keys()])
+        max_lvl = max([i for i in dct_means_1.values()])
+
+        # Подписи к графику
+        if parameter == 'oxig':
+            title = f'Средние показатели растворенного кислорода {min_lat}-{max_lat}'
+            y_axis_title = 'Концентрация растворенного кислорода, мл/л'
+
+        elif parameter == 'sal':
+            title = f'Средние показатели солености {min_lat}-{max_lat}'
+            y_axis_title = 'Соленость, е.п.с.'
+
+        elif parameter == 'temp':
+            title = f'Средние показатели температуры {min_lat}-{max_lat}'
+            y_axis_title = 'Температура, С'
+
+        fig_graph.update_layout(
+            title={
+                'text': f"{title} на глубинах {min_lvl} - {max_lvl + 1} м ",
+                'y': 1,
+                'x': 0.5,
+                'xanchor': 'center',
+                'yanchor': 'top'},
+
+            xaxis_title="Год",
+            yaxis_title=f'{y_axis_title}',
+            title_font_family="Arial, bold",
+            title_font_color="black",
+            title_font_size=30)
+
+        fig_graph.write_html(f'{filename_means_3_1}/graph_mean.html', auto_open=True)
+
+        # =============================================================================
+        #       Создает график в Excel
+        # =============================================================================
+        if to_excel:
+            graph_excel_means(lst_years, title, y_axis_title)
+
+
+def graph_profile():
     """
     Создает вертикальные профили распределения выбранного параметра по дестилетиям
     """
+    # df_for_mean_without_outliers = pd.DataFrame(columns=df_area.columns)
+
     # Карта распределения станций
     if create_map:
         create_map_levels(df_area, min_years, max_years)
@@ -847,8 +1226,15 @@ def graph_profile_of_means():
         if to_excel:
             graph_excel(dct_years, title, axis_title)
 
+    df_for_mean_without_outliers.to_csv(f'{path_project}df_for_mean2.csv', index=False)
+    # graph_profile_of_means()
+    
     print('\nThe calculation is successfully completed!')
+    # global df_for_mean_without_outliers
+    # print('df_for_mean_without_outliers')
+    # print(df_for_mean_without_outliers)
+    # df_for_mean_without_outliers.to_csv(f'{path_project}df_for_mean.csv', index=False)
 
 
 if __name__ == "__main__":
-    graph_profile_of_means()
+    graph_profile()
