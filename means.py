@@ -2,7 +2,6 @@
 
 # TODO: Построение графиков средних при построении профилей, чтобы не удалять по несколько раз выбросы !!!!!!!!
 
-# TODO: Изменить названия файлов в объединенном варианте ( чтобы избеждать конфликта имен переменных)
 # TODO: Совмещенные графики T S Oxig
 # TODO: При построении карты отрицательные числа
 """
@@ -42,7 +41,7 @@ path_project = 'D:/УЧЕБА/Самообучение/Програмирова�
 
 # Загружает файл БД по Охотскому морю
 path_orig = f'{path_project}refactoring_base_new.csv'
-# path_orig = f'{path_project}tested_2.csv'
+# path_orig = f'{path_project}df_for_mean2.csv'
 df_orig = pd.read_csv(path_orig, sep=',')
 
 # Устанавливает координаты района
@@ -57,7 +56,7 @@ min_lat, max_lat = 50, 55
 min_long, max_long = 152, 155
 
 min_lvl, max_lvl = 200, 1100
-min_years, max_years = 1980, 2020
+min_years, max_years = 1980, 1989
 
 # Список условий для фильтрации станций
 boundary_area = '(@min_lat      <=  lat     <=  @max_lat) and ' \
@@ -66,7 +65,7 @@ boundary_area = '(@min_lat      <=  lat     <=  @max_lat) and ' \
                 '(@min_years    <=  Year    <= @max_years)'
 
 # Выбор исследуемой характеристики/параметра
-parameter = 'sal'
+parameter = 'oxig'
 
 # Удаление выбросов, True - удаляет, False - не удаляет (нужное вписать)
 outliers_removed = False
@@ -113,9 +112,9 @@ create_map = True
 create_graph = True
 
 # Границы уровней
-dct_1 = {i: i + 99 for i in range(200, 1000, 100)}
-dct_2 = {i: i + 199 for i in range(600, 1000, 200)}
-dct_std_lvl = {**dct_1, **dct_2}
+dct_means_1 = {i: i + 99 for i in range(200, 1100, 100)}
+dct_means_2 = {i: i + 199 for i in range(600, 1100, 200)}
+dct_std_lvl = {**dct_means_1, **dct_means_2}
 
 # Данные из БД по Охотскому морю по исследуемому району
 df_area = df_orig.query(boundary_area)
@@ -135,7 +134,9 @@ def create_map_levels(df, min_yrs, max_yrs):
     max_lvl_name = int(dff[['level']].max())
 
     map_center = go.layout.mapbox.Center(lat=53, lon=149)
-
+    dff_for_map = dff.copy(deep=True)
+    dff_for_map['abs_parameter'] = dff[parameter]
+    dff_for_map['abs_parameter'] = dff_for_map['abs_parameter'].fillna(99).abs()
     # fig_map = px.scatter_mapbox(dff, lon="long", lat="lat", animation_frame="Year",
     #                             size=parameter,
     #                             hover_name=parameter,
@@ -160,8 +161,8 @@ def create_map_levels(df, min_yrs, max_yrs):
     
     # fig_map.write_html(f'{filename_means_3_1}/map_stations_area_of_south.html', auto_open=True)
 
-    fig_map_all = px.scatter_mapbox(dff, lon="long", lat="lat",
-                                    # size=parameter,
+    fig_map_all = px.scatter_mapbox(dff_for_map, lon="long", lat="lat",
+                                    # size='abs_parameter',
                                     hover_name=parameter,
                                     hover_data={"level": True, "zz": True, 'long': True, 'Month': True,
                                                 "lat": True, parameter: False, 'Year': True},
@@ -459,11 +460,11 @@ def create_empty_xlsx_files():
     for i in range(1, 3):
 
         if i == 1:
-            dct_lvl = dct_1
+            dct_means_lvl = dct_means_1
         else:
-            dct_lvl = dct_2
+            dct_means_lvl = dct_means_2
 
-        for k, v in dct_lvl.items():
+        for k, v in dct_means_lvl.items():
             path_file = f'{path_directory}/{k}_{v + 1}_{min_lat}-{max_lat}'
             lst_file_names.append(path_file)
 
@@ -605,8 +606,11 @@ def mean_for_nst_year_lvl(df, min_lvl, max_lvl):
 
     #  Переворачивает объедиенные средние_2
     only_mn_yr_1_lvl = df_for_mn_yr_1_lvl.stack()
-
+    print(only_mn_yr_1_lvl)
+    print()
     only_mn_yr_1_lvl = only_mn_yr_1_lvl.reset_index(drop=True)
+    print('only_mn_yr_1_lvl_stack')
+    print(only_mn_yr_1_lvl)
 
     lst_yr = df['Year'].unique()
 
@@ -629,7 +633,7 @@ def mean_for_nst_year_lvl(df, min_lvl, max_lvl):
     return df_yr_nan
 
 
-def graph_excel(lst_year, title_excel, yaxis_title_excel):
+def graph_excel_means(lst_year, title_excel, yaxis_title_excel):
     """
     В итоговом файле xlsx, создает диаграмму\n
     lst_year - для количества столбцов, по которым строится график\n
@@ -683,11 +687,11 @@ def graph_excel(lst_year, title_excel, yaxis_title_excel):
     for i in range(1, 3):
 
         if i == 1:
-            dct_lvl = dct_1
+            dct_means_lvl = dct_means_1
         else:
-            dct_lvl = dct_2
+            dct_means_lvl = dct_means_2
 
-        for k, v in dct_lvl.items():
+        for k, v in dct_means_lvl.items():
             xvalues = Reference(ws, min_col=1, min_row=2, max_row=1 + max_rows)
             values = Reference(ws, min_col=num, min_row=1, max_row=1 + max_rows)
             # print('values')
@@ -737,17 +741,18 @@ def graph_profile_of_means():
     if not make_interpolation:
         path_to_xlsx_result = f'{filename_means_not_inter}/result_{filename_means_not_inter}'
 
-    for i in range(1, 3):
+    # for i in range(1, 3):
+    for i in range(1, 2):
 
         if i == 1:
-            dct_lvl = dct_1
-        else:
-            dct_lvl = dct_2
+            dct_means_lvl = dct_means_1
+        # else:
+        #     dct_means_lvl = dct_means_2
 
         if outliers_removed:
-            df = clean_outliers(df, dct_lvl)
+            df = clean_outliers(df, dct_means_lvl)
 
-        for k, v in dct_lvl.items():
+        for k, v in dct_means_lvl.items():
             result = mean_for_nst_year_lvl(df, k, v)
             # graph_excel(result,k,v)
             df_result = pd.merge(df_result, result, on='Year', how='outer')
@@ -762,8 +767,8 @@ def graph_profile_of_means():
 
     if create_graph:
         # Подписи к графику
-        min_lvl = min([i for i in dct_1.keys()])
-        max_lvl = max([i for i in dct_1.values()])
+        min_lvl = min([i for i in dct_means_1.keys()])
+        max_lvl = max([i for i in dct_means_1.values()])
 
         # Подписи к графику
         if parameter == 'oxig':
@@ -798,7 +803,7 @@ def graph_profile_of_means():
         #       Создает график в Excel
         # =============================================================================
         if to_excel:
-            graph_excel(lst_years, title, y_axis_title)
+            graph_excel_means(lst_years, title, y_axis_title)
 
 
 if __name__ == "__main__":
