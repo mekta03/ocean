@@ -124,8 +124,9 @@ dff_1 = df_area.copy()
 dff_1['level'] = np.round(dff_1['level']).astype(int)
 df_area = dff_1.copy()
 
+# Список уровней для построения графика средних значений
 lst_std_lvl_for_means = [200,600,800,1000]
-dff_for_means = pd.DataFrame(data={'level':lst_std_lvl_for_means}, index = [i for i in range(len(lst_std_lvl_for_means))])
+df_for_means_graph = pd.DataFrame(data={'level':lst_std_lvl_for_means}, index = [i for i in range(len(lst_std_lvl_for_means))])
 
 
 def create_map_levels(df, min_yrs, max_yrs):
@@ -675,14 +676,12 @@ def mean_year_decade_to_std_lvl(start_dec, end_dec):
 
             df_mean_decade_std_lvl = df_mean_decade_std_lvl.round(2)
 
-    print('df_means_std_level')
+    # Таблица со значениями на заданных уровнях для одной декады (для дальнейшего построения графика средних значений) 
+    df_for_means_graph_1_dec = df_means_std_level.query('level in @lst_std_lvl_for_means').iloc[:,:-1]
     
-    print(df_means_std_level)
-    dfff = df_means_std_level.query('level in @lst_std_lvl_for_means').iloc[:,:-1]
-    # dfff = dfff.stack()
-    global dff_for_means
-
-    dff_for_means = pd.merge(dff_for_means, dfff, on=['level'])
+    # Объединение значений для графика средних за все декады
+    global df_for_means_graph
+    df_for_means_graph = pd.merge(df_for_means_graph, df_for_means_graph_1_dec, on=['level'])
 
 
     if to_excel:
@@ -800,13 +799,12 @@ def graph_excel_means(lst_year, title_excel, yaxis_title_excel):
     else:
         wb = openpyxl.load_workbook(
             f'{path_project}{filename_not_inter}/{rslt_std_not_inter}.xlsx')
-    # wb = openpyxl.load_workbook(f'{path_project}{filename_means_inter}/result_{filename_means_inter}.xlsx')
 
-    # ws = wb['all']
     ws = wb['means_graph']
 
     chart = ScatterChart()
-    chart.title = title_excel
+    title = f"Средние значения {title_excel} с {min_years} по {max_years} гг. ({min_lat}-{max_lat})"
+    chart.title = title
     # chart.style = 2
     chart.x_axis.title = 'Года'
     chart.y_axis.title = yaxis_title_excel
@@ -837,19 +835,12 @@ def graph_excel_means(lst_year, title_excel, yaxis_title_excel):
     #=============================================================
     num = 2
     max_rows = len(lst_year)
-    # for i in range(1, 3):
+
     for i in lst_std_lvl_for_means:
 
-        # if i == 1:
-        #     dct_means_lvl = dct_means_1
-        # else:
-        #     dct_means_lvl = dct_means_2
-
-        # for k, v in dct_means_lvl.items():
         xvalues = Reference(ws, min_col=1, min_row=2, max_row=1 + max_rows)
         values = Reference(ws, min_col=num, min_row=1, max_row=1 + max_rows)
-        # print('values')
-        # print(values)
+
         num += 1
 
         series = Series(values, xvalues, title_from_data=True)
@@ -863,11 +854,105 @@ def graph_excel_means(lst_year, title_excel, yaxis_title_excel):
 
     ws.add_chart(chart, "K02")
 
-    # wb.save(f'{path_project}{filename_means_inter}/result_{filename_means_inter}.xlsx')
     if make_interpolation:
         wb.save(f'{path_project}{filename_inter}/{rslt_std_inter}.xlsx')
     else:
         wb.save(f'{path_project}{filename_not_inter}/{rslt_std_not_inter}.xlsx')
+
+
+def graph_of_means(dff):
+    """
+    Создает график средних годовых значений выбранного параметра
+    """
+
+    df_1 = dff.copy()
+    fig_graph = go.Figure()
+    # # print(df)
+    # # Карта распределения станций
+    # if create_map:
+    #     create_map_levels(df, min_years, max_years)
+
+    # if outliers_removed:
+    #     df = clean_outliers(df)
+
+    # if to_excel:
+    #     # Создает пустые файлы xlsx
+    #     create_empty_xlsx_files()
+
+    lst_years = [i for i in range(min_years, max_years + 1)]
+
+    # df_result = pd.DataFrame(data={'Year': lst_years},
+    #                          index=[i for i in range(len(lst_years))])
+
+    # path_to_xlsx_result = f'{filename_means_inter}/result_{filename_means_inter}'
+
+    # if not make_interpolation:
+    #     path_to_xlsx_result = f'{filename_means_not_inter}/result_{filename_means_not_inter}'
+
+    # # for i in range(1, 3):
+    # for i in range(1, 2):
+
+    #     if i == 1:
+    #         dct_means_lvl = dct_means_1
+    #     # # else:
+    #     # #     dct_means_lvl = dct_means_2
+
+    #     # if outliers_removed:
+        #     df = clean_outliers(df, dct_means_lvl)
+
+    for k in lst_std_lvl_for_means:
+        # result = mean_for_nst_year_lvl(df, k, v)
+        # graph_excel(result,k,v)
+        # df_result = pd.merge(df_result, result, on='Year', how='outer')
+
+        x = df_1['Year']
+        y = df_1[k]
+
+        fig_graph.add_trace(go.Scatter(x=x, y=y, name=k, mode='lines+markers'))
+
+    # if to_excel:
+    #     excel(df_result, 'all', path_to_xlsx_result, 'a')
+
+    if create_graph:
+        # Подписи к графику
+        # min_lvl = min([i for i in dct_means_1.keys()])
+        # max_lvl = max([i for i in dct_means_1.values()])
+
+        # Подписи к графику
+        if parameter == 'oxig':
+            title = f'Средние показатели растворенного кислорода {min_lat}-{max_lat}'
+            y_axis_title = 'Концентрация растворенного кислорода, мл/л'
+
+        elif parameter == 'sal':
+            title = f'Средние показатели солености {min_lat}-{max_lat}'
+            y_axis_title = 'Соленость, е.п.с.'
+
+        elif parameter == 'temp':
+            title = f'Средние показатели температуры {min_lat}-{max_lat}'
+            y_axis_title = 'Температура, С'
+
+        fig_graph.update_layout(
+            title={
+                # 'text': f"{title} на глубинах {min_lvl} - {max_lvl + 1} м ",
+                'text': f"{title} на глубинах ",
+                'y': 1,
+                'x': 0.5,
+                'xanchor': 'center',
+                'yanchor': 'top'},
+
+            xaxis_title="Год",
+            yaxis_title=f'{y_axis_title}',
+            title_font_family="Arial, bold",
+            title_font_color="black",
+            title_font_size=30)
+
+        fig_graph.write_html(f'{filename}/{name_project_files}/graph_mean.html', auto_open=True)
+
+        # =============================================================================
+        #       Создает график в Excel
+        # =============================================================================
+        # if to_excel:
+        #     graph_excel_means(lst_years, title, y_axis_title)
 
 
 def graph_profile_of_means():
@@ -919,12 +1004,15 @@ def graph_profile_of_means():
         fig_graph.update_yaxes(autorange="reversed")
 
         if parameter == 'oxig':
+            parameter_name = 'кислорода'
             title = f"Вертикальные профили кислорода с {min_years} по {max_years} гг. ({min_lat}-{max_lat})"
             axis_title = "Концентрация растворенного кислорода, мл/л"
         elif parameter == 'sal':
+            parameter_name = 'солености'
             title = f"Вертикальные профили солености с {min_years} по {max_years} гг. ({min_lat}-{max_lat})"
             axis_title = "Соленость, е.п.с."
         elif parameter == 'temp':
+            parameter_name = 'температуры'
             title = f"Вертикальные профили температуры с {min_years} по {max_years} гг. ({min_lat}-{max_lat})"
             axis_title = "Температура, С"
 
@@ -952,7 +1040,7 @@ def graph_profile_of_means():
 
 
     print()
-    df_1_stack = dff_for_means.query('level in @lst_std_lvl_for_means').T
+    df_1_stack = df_for_means_graph.query('level in @lst_std_lvl_for_means').T
     df_1_stack['Year'] = df_1_stack.index
     df_1_stack = df_1_stack.reset_index(drop=True)
     df_1_stack = df_1_stack[1:]
@@ -969,10 +1057,7 @@ def graph_profile_of_means():
     dff_new = pd.DataFrame(data={'Year':[year for year in range(min_years, max_years+1)]})
     dff_new = pd.merge(dff_new, df_1_stack, on='Year', how='outer')
     print(dff_new)
-    # dff_for_means_2 = pd.DataFrame(data={'Years':dff_for_means.columns[1:], 
-    #                                     '200':dff_for_means.query('level == 200').iloc[:, 1:]},
-    #                                 index = [i for i in range(len(dff_for_means.columns[1:]))] 
-    #                                         )
+
     if to_excel:
         if make_interpolation:
             file_name_3 = f'{filename_inter}/{rslt_std_inter}'
@@ -980,7 +1065,11 @@ def graph_profile_of_means():
             file_name_3 = f'{filename_not_inter}/{rslt_std_not_inter}'
         
         excel(dff_new, 'means_graph', file_name_3, 'a')
-    graph_excel_means(dff_new['Year'], title, axis_title)
+
+    graph_of_means(dff_new)
+
+    graph_excel_means(dff_new['Year'], parameter_name, axis_title)
+    
     # dff_new.to_csv(f'{path_project}dff_means_2.csv', index = False)
     print('\nThe calculation is successfully completed!')
 
