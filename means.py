@@ -3,7 +3,7 @@
 # TODO: Построение графиков средних при построении профилей, чтобы не удалять по несколько раз выбросы !!!!!!!!
 
 # TODO: Совмещенные графики T S Oxig
-# TODO: При построении карты отрицательные числа
+
 """
 Created on Fri Jan 22 14:31:02 2021
 
@@ -34,8 +34,8 @@ import plotly.graph_objects as go
 from scipy import stats
 
 # Путь к папке проекта
-path_project = 'D:/УЧЕБА/Самообучение/Програмирование/Python_Projects/Zuenko/Zuenko/py/test/'
-# path_project = '/media/lenovo/D/УЧЕБА/Самообучение/Програмирование/Python_Projects/Zuenko/Zuenko/py/test/'
+# path_project = 'D:/УЧЕБА/Самообучение/Програмирование/Python_Projects/Zuenko/Zuenko/py/test/'
+path_project = '/media/lenovo/D/УЧЕБА/Самообучение/Програмирование/Python_Projects/Zuenko/Zuenko/py/test/'
 # path_project = 'C:/Users/vladimir.matveev/Desktop/Zuenko/Zuenko/py/test/'
 # path_project = 'C:/Users/malyg/Desktop/'
 
