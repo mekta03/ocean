@@ -18,6 +18,7 @@ Created on Fri Jan 22 13:40:32 2021
     - построение карты расперделения станций;
     - построение графика вертикальных профилей.
 
+TODO Сохранять результат удаления выбросов
 """
 # =============================================================================
 import pandas as pd
@@ -47,8 +48,8 @@ df_orig = pd.read_csv(path_orig, sep=',')
 # min_long, max_long = 152.9, 157
 
 # Новые границы
-# min_lat, max_lat = 50, 55
-min_lat, max_lat = 55, 58
+min_lat, max_lat = 50, 55
+# min_lat, max_lat = 55, 58
 # min_lat, max_lat = 50, 58
 min_long, max_long = 152, 155
 
@@ -61,7 +62,7 @@ boundary_area = '(@min_lat      <=  lat     <=  @max_lat) and ' \
                 '(@min_zz       <=  zz )'
 
 # Выбор исследуемой характеристики/параметра
-parameter = 'sal'
+parameter = 'temp'
 
 # Удаление выбросов, True - удаляет, False - не удаляет (нужное вписать)
 outliers_removed = False
@@ -135,12 +136,18 @@ def create_map_levels(df, min_yrs, max_yrs):
     """
     dff = df.copy()
     dff = df.query("(@min_yrs   <=   Year   <=  @max_yrs)").copy()
-
+    
+    # dff = dff.loc[(dff[parameter] < 0)]
     min_lvl_name = int(dff[['level']].min())
     max_lvl_name = int(dff[['level']].max())
 
     map_center = go.layout.mapbox.Center(lat=53, lon=149)
-    #
+
+    dff = dff.dropna()
+    # Plotly map не работает с отрицательными значениями, создает положительные дубликаты значения в новый столбец
+    if min(dff[parameter]) < 0:
+        dff['new_parameter'] = abs(dff[parameter])
+
     # fig_map = px.scatter_mapbox(dff, lon="long", lat="lat", animation_frame="Year",
     #                             size=parameter,
     #                             hover_name=parameter,
@@ -166,13 +173,14 @@ def create_map_levels(df, min_yrs, max_yrs):
     #
     # fig_map.write_html(f'{path_project}{name_project_files}/map_stations_area_of_south.html', auto_open=True)
     #
+    # size_1 = dff[parameter].fillna(0)
 
     fig_map_all = px.scatter_mapbox(dff, lon="long", lat="lat",
-                                    # size=parameter,
+                                    size=(parameter if min(dff[parameter]) > 0 else 'new_parameter'),
                                     hover_name=parameter,
                                     hover_data={"level": True, "zz": True, 'long': True, "lat": True, 'Stations': True,
                                                 parameter: False, 'Year': True},
-                                    size_max=20,
+                                    # size_max=40,
                                     color=parameter,  # Цветовая кодировка в данном случае по горизонту (0 или 1)
                                     color_continuous_scale=["yellow", "red"],
                                     zoom=4,
@@ -867,74 +875,37 @@ def graph_of_means(dff):
 
     df_1 = dff.copy()
     fig_graph = go.Figure()
-    # # print(df)
-    # # Карта распределения станций
-    # if create_map:
-    #     create_map_levels(df, min_years, max_years)
-
-    # if outliers_removed:
-    #     df = clean_outliers(df)
-
-    # if to_excel:
-    #     # Создает пустые файлы xlsx
-    #     create_empty_xlsx_files()
-
+    
     lst_years = [i for i in range(min_years, max_years + 1)]
 
-    # df_result = pd.DataFrame(data={'Year': lst_years},
-    #                          index=[i for i in range(len(lst_years))])
-
-    # path_to_xlsx_result = f'{filename_means_inter}/result_{filename_means_inter}'
-
-    # if not make_interpolation:
-    #     path_to_xlsx_result = f'{filename_means_not_inter}/result_{filename_means_not_inter}'
-
-    # # for i in range(1, 3):
-    # for i in range(1, 2):
-
-    #     if i == 1:
-    #         dct_means_lvl = dct_means_1
-    #     # # else:
-    #     # #     dct_means_lvl = dct_means_2
-
-    #     # if outliers_removed:
-        #     df = clean_outliers(df, dct_means_lvl)
-
     for k in lst_std_lvl_for_means:
-        # result = mean_for_nst_year_lvl(df, k, v)
-        # graph_excel(result,k,v)
-        # df_result = pd.merge(df_result, result, on='Year', how='outer')
 
         x = df_1['Year']
         y = df_1[k]
 
         fig_graph.add_trace(go.Scatter(x=x, y=y, name=k, mode='lines+markers'))
 
-    # if to_excel:
-    #     excel(df_result, 'all', path_to_xlsx_result, 'a')
-
     if create_graph:
-        # Подписи к графику
-        # min_lvl = min([i for i in dct_means_1.keys()])
-        # max_lvl = max([i for i in dct_means_1.values()])
+        # Подпиlси к графику
+        min_lvl = min(lst_std_lvl_for_means)
+        max_lvl = max(lst_std_lvl_for_means)
 
         # Подписи к графику
         if parameter == 'oxig':
-            title = f'Средние показатели растворенного кислорода {min_lat}-{max_lat}'
+            title = f'Средние показатели растворенного кислорода'
             y_axis_title = 'Концентрация растворенного кислорода, мл/л'
 
         elif parameter == 'sal':
-            title = f'Средние показатели солености {min_lat}-{max_lat}'
+            title = f'Средние показатели солености '
             y_axis_title = 'Соленость, е.п.с.'
 
         elif parameter == 'temp':
-            title = f'Средние показатели температуры {min_lat}-{max_lat}'
+            title = f'Средние показатели температуры'
             y_axis_title = 'Температура, С'
 
         fig_graph.update_layout(
             title={
-                # 'text': f"{title} на глубинах {min_lvl} - {max_lvl + 1} м ",
-                'text': f"{title} на глубинах ",
+                'text': f"{title} на глубинах {min_lvl} - {max_lvl} м ({min_lat}-{max_lat})",
                 'y': 1,
                 'x': 0.5,
                 'xanchor': 'center',
@@ -947,12 +918,6 @@ def graph_of_means(dff):
             title_font_size=30)
 
         fig_graph.write_html(f'{filename}/{name_project_files}/graph_mean.html', auto_open=True)
-
-        # =============================================================================
-        #       Создает график в Excel
-        # =============================================================================
-        # if to_excel:
-        #     graph_excel_means(lst_years, title, y_axis_title)
 
 
 def graph_profile_of_means():
