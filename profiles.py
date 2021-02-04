@@ -779,7 +779,11 @@ def graph_excel(dct_years, title_excel, yaxis_title_excel):
         chart.x_axis.scaling.max = max_x
         chart.x_axis.scaling.min = min_x
 
-    ws.add_chart(chart, "K02")
+        # Установка размеров холста диаграммы
+        chart.height = 20 
+        chart.width = 15
+
+    ws.add_chart(chart, "I02")
 
     if make_interpolation:
         wb.save(f'{path_project}{filename_inter}/{rslt_std_inter}.xlsx')
@@ -810,17 +814,6 @@ def graph_excel_means(lst_year, title_excel, yaxis_title_excel):
 
     ws = wb['means_graph']
 
-    chart = ScatterChart()
-    title = f"Средние значения {title_excel} с {min_years} по {max_years} гг. ({min_lat}-{max_lat})"
-    chart.title = title
-    # chart.style = 2
-    chart.x_axis.title = 'Года'
-    chart.y_axis.title = yaxis_title_excel
-
-    # chart.x_axis.scaling.min = 0
-    # chart.y_axis.scaling.min = 1
-    # # chart.x_axis.scaling.max = 11
-    # chart.y_axis.scaling.max = 2.7
     #========================================================
     # Расчет максимальных и минимальных значений для осей
     df_excel = pd.DataFrame(ws.values)
@@ -842,9 +835,20 @@ def graph_excel_means(lst_year, title_excel, yaxis_title_excel):
     min_x = min(lst_year)-1
     #=============================================================
     num = 2
+    num_rows = 2
     max_rows = len(lst_year)
 
     for i in lst_std_lvl_for_means:
+        chart = ScatterChart()
+        title = f"Средние значения {title_excel} с {min_years} по {max_years} гг. {i} м ({min_lat}-{max_lat})"
+        chart.title = title
+        chart.style = 2
+        chart.x_axis.title = 'Года'
+        chart.y_axis.title = yaxis_title_excel
+        
+        # Установка размеров холста диаграммы
+        chart.height = 8 # default is 7.5
+        chart.width = 30 # default is 15
 
         xvalues = Reference(ws, min_col=1, min_row=2, max_row=1 + max_rows)
         values = Reference(ws, min_col=num, min_row=1, max_row=1 + max_rows)
@@ -855,13 +859,13 @@ def graph_excel_means(lst_year, title_excel, yaxis_title_excel):
         chart.series.append(series)
         
         # Установление макс и мин значений осей
-        chart.y_axis.scaling.max = max_y
-        chart.y_axis.scaling.min = min_y
-        chart.x_axis.scaling.max = max_x
-        chart.x_axis.scaling.min = min_x
-
-    ws.add_chart(chart, "K02")
-
+        # chart.y_axis.scaling.max = max_y
+        # chart.y_axis.scaling.min = min_y
+        # chart.x_axis.scaling.max = max_x
+        # chart.x_axis.scaling.min = min_x
+        
+        ws.add_chart(chart, f"I{num_rows}")
+        num_rows += 16
     if make_interpolation:
         wb.save(f'{path_project}{filename_inter}/{rslt_std_inter}.xlsx')
     else:
