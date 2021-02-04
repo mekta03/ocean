@@ -30,8 +30,8 @@ import os
 
 # Путь к папке проекта
 # path_project = 'C:/Users/vladimir.matveev/Desktop/Zuenko/Zuenko/py/test/'
-path_project = 'D:/УЧЕБА/Самообучение/Програмирование/Python_Projects/Zuenko/Zuenko/py/test/'
-# path_project = '/media/lenovo/D/УЧЕБА/Самообучение/Програмирование/Python_Projects/Zuenko/Zuenko/py/test/'
+# path_project = 'D:/УЧЕБА/Самообучение/Програмирование/Python_Projects/Zuenko/Zuenko/py/test/'
+path_project = '/media/lenovo/D/УЧЕБА/Самообучение/Програмирование/Python_Projects/Zuenko/Zuenko/py/test/'
 
 
 # Загружает файл БД по Охотскому морю
@@ -123,6 +123,9 @@ df_area = df_orig.query(boundary_area)
 dff_1 = df_area.copy()
 dff_1['level'] = np.round(dff_1['level']).astype(int)
 df_area = dff_1.copy()
+
+lst_std_lvl_for_means = [200,600,800,1000]
+dff_for_means = pd.DataFrame(data={'level':lst_std_lvl_for_means}, index = [i for i in range(len(lst_std_lvl_for_means))])
 
 
 def create_map_levels(df, min_yrs, max_yrs):
@@ -672,6 +675,16 @@ def mean_year_decade_to_std_lvl(start_dec, end_dec):
 
             df_mean_decade_std_lvl = df_mean_decade_std_lvl.round(2)
 
+    print('df_means_std_level')
+    
+    print(df_means_std_level)
+    dfff = df_means_std_level.query('level in @lst_std_lvl_for_means').iloc[:,:-1]
+    # dfff = dfff.stack()
+    global dff_for_means
+
+    dff_for_means = pd.merge(dff_for_means, dfff, on=['level'])
+
+
     if to_excel:
         if make_interpolation:
             excel(df_means_std_level, min_year, f'{filename_inter}/{rslt_std_inter}', 'a')
@@ -767,6 +780,96 @@ def graph_excel(dct_years, title_excel, yaxis_title_excel):
         wb.save(f'{path_project}{filename_not_inter}/{rslt_std_not_inter}.xlsx')
 
 
+def graph_excel_means(lst_year, title_excel, yaxis_title_excel):
+    """
+    В итоговом файле xlsx, создает диаграмму\n
+    lst_year - для количества столбцов, по которым строится график\n
+    title_excel - название диаграммы\n
+    yaxis_title_excel - название оси Y\n
+    """
+    from openpyxl import Workbook
+    from openpyxl.chart import (
+        LineChart,
+        ScatterChart,
+        Reference,
+        Series,
+    )
+    
+    if make_interpolation:
+        wb = openpyxl.load_workbook(f'{path_project}{filename_inter}/{rslt_std_inter}.xlsx')
+    else:
+        wb = openpyxl.load_workbook(
+            f'{path_project}{filename_not_inter}/{rslt_std_not_inter}.xlsx')
+    # wb = openpyxl.load_workbook(f'{path_project}{filename_means_inter}/result_{filename_means_inter}.xlsx')
+
+    # ws = wb['all']
+    ws = wb['means_graph']
+
+    chart = ScatterChart()
+    chart.title = title_excel
+    # chart.style = 2
+    chart.x_axis.title = 'Года'
+    chart.y_axis.title = yaxis_title_excel
+
+    # chart.x_axis.scaling.min = 0
+    # chart.y_axis.scaling.min = 1
+    # # chart.x_axis.scaling.max = 11
+    # chart.y_axis.scaling.max = 2.7
+    #========================================================
+    # Расчет максимальных и минимальных значений для осей
+    df_excel = pd.DataFrame(ws.values)
+
+    num_of_cols = df_excel.iloc[:,1:].shape[1]
+
+    lst_max = []
+    lst_min = []
+
+    for i in range(1, 1+num_of_cols):
+        max_of_series = df_excel.iloc[1:,i].max()
+        min_of_series = df_excel.iloc[1:,i].min()
+        lst_max.append(max_of_series)
+        lst_min.append(min_of_series)
+
+    max_y = np.round(max(lst_max)+1)
+    min_y = np.round(min(lst_min)-1)
+    max_x = max(lst_year)+1
+    min_x = min(lst_year)-1
+    #=============================================================
+    num = 2
+    max_rows = len(lst_year)
+    # for i in range(1, 3):
+    for i in lst_std_lvl_for_means:
+
+        # if i == 1:
+        #     dct_means_lvl = dct_means_1
+        # else:
+        #     dct_means_lvl = dct_means_2
+
+        # for k, v in dct_means_lvl.items():
+        xvalues = Reference(ws, min_col=1, min_row=2, max_row=1 + max_rows)
+        values = Reference(ws, min_col=num, min_row=1, max_row=1 + max_rows)
+        # print('values')
+        # print(values)
+        num += 1
+
+        series = Series(values, xvalues, title_from_data=True)
+        chart.series.append(series)
+        
+        # Установление макс и мин значений осей
+        chart.y_axis.scaling.max = max_y
+        chart.y_axis.scaling.min = min_y
+        chart.x_axis.scaling.max = max_x
+        chart.x_axis.scaling.min = min_x
+
+    ws.add_chart(chart, "K02")
+
+    # wb.save(f'{path_project}{filename_means_inter}/result_{filename_means_inter}.xlsx')
+    if make_interpolation:
+        wb.save(f'{path_project}{filename_inter}/{rslt_std_inter}.xlsx')
+    else:
+        wb.save(f'{path_project}{filename_not_inter}/{rslt_std_not_inter}.xlsx')
+
+
 def graph_profile_of_means():
     """
     Создает вертикальные профили распределения выбранного параметра по дестилетиям
@@ -847,6 +950,38 @@ def graph_profile_of_means():
         if to_excel:
             graph_excel(dct_years, title, axis_title)
 
+
+    print()
+    df_1_stack = dff_for_means.query('level in @lst_std_lvl_for_means').T
+    df_1_stack['Year'] = df_1_stack.index
+    df_1_stack = df_1_stack.reset_index(drop=True)
+    df_1_stack = df_1_stack[1:]
+
+    df_1_stack.columns = [*lst_std_lvl_for_means, 'Year']
+    df_1_stack = df_1_stack[['Year',* lst_std_lvl_for_means ]]
+
+    df_yr = df_1_stack[['Year']].copy()
+    df_yr['new_yr'] = [int(i.split('_')[1]) for i in df_yr['Year']]
+    df_1_stack['Year'] = df_yr['new_yr'].copy()
+
+    # print(df_1_stack)
+    
+    dff_new = pd.DataFrame(data={'Year':[year for year in range(min_years, max_years+1)]})
+    dff_new = pd.merge(dff_new, df_1_stack, on='Year', how='outer')
+    print(dff_new)
+    # dff_for_means_2 = pd.DataFrame(data={'Years':dff_for_means.columns[1:], 
+    #                                     '200':dff_for_means.query('level == 200').iloc[:, 1:]},
+    #                                 index = [i for i in range(len(dff_for_means.columns[1:]))] 
+    #                                         )
+    if to_excel:
+        if make_interpolation:
+            file_name_3 = f'{filename_inter}/{rslt_std_inter}'
+        else:
+            file_name_3 = f'{filename_not_inter}/{rslt_std_not_inter}'
+        
+        excel(dff_new, 'means_graph', file_name_3, 'a')
+    graph_excel_means(dff_new['Year'], title, axis_title)
+    # dff_new.to_csv(f'{path_project}dff_means_2.csv', index = False)
     print('\nThe calculation is successfully completed!')
 
 
