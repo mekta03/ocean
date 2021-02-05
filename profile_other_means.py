@@ -38,11 +38,6 @@ import os
 path_project = '/media/lenovo/D/УЧЕБА/Самообучение/Програмирование/Python_Projects/Zuenko/Zuenko/py/test/'
 
 
-# Загружает файл БД по Охотскому морю
-path_orig = f'{path_project}refactoring_base_new.csv'
-
-# Загружает файл БД по Охотскому морю
-df_orig = pd.read_csv(path_orig, sep=',')
 
 # Устанавливает координаты района
 # min_lat, max_lat = 55, 58.5
@@ -57,7 +52,25 @@ min_lat, max_lat = 55, 58
 min_long, max_long = 152, 155
 
 min_zz = 300
-min_years, max_years = 1980, 2020
+min_years, max_years = 2000, 2010
+
+# Удаление выбросов, True - удаляет, False - не удаляет (нужное вписать)
+outliers_removed = False
+
+
+path_orig = f'{path_project}without_outliers{min_lat}_{max_lat}_{min_years}_{max_years}.csv'
+# Загружает файл БД по Охотскому морю
+if not os.path.exists(path_orig):
+        # os.mkdir(filename)
+    outliers_removed = not outliers_removed
+    path_orig = f'{path_project}refactoring_base_new.csv'
+
+
+print(outliers_removed)
+
+# Загружает файл БД по Охотскому морю
+df_orig = pd.read_csv(path_orig, sep=',')
+
 
 # Список условий для фильтрации станций
 boundary_area = '(@min_lat      <=  lat     <=  @max_lat) and ' \
@@ -67,8 +80,6 @@ boundary_area = '(@min_lat      <=  lat     <=  @max_lat) and ' \
 # Выбор исследуемой характеристики/параметра
 parameter = 'oxig'
 
-# Удаление выбросов, True - удаляет, False - не удаляет (нужное вписать)
-outliers_removed = False
 
 # Записывает результаты в excel, True- записывает, False - не записывает (нужное вписать)
 to_excel = True
@@ -417,7 +428,7 @@ def clean_outliers(df, min_yrs, max_yrs):
 
             else:
                 dff_concat = pd.concat([dff_concat, df_old_1])
-    # dff_concat.to_csv(f'{path_project}concat.csv', index=False)
+    dff_concat.to_csv(f'{path_project}without_outliers{min_lat}_{max_lat}_{min_years}_{max_years}.csv', index=False)
     return dff_concat
 
 
@@ -664,7 +675,6 @@ def mean_year_decade_to_std_lvl(start_dec, end_dec):
     # DataFrame для соединения средних значений с уровней за весь год со всех станций
     dff_new_mean = pd.DataFrame()
     dff_new_mean['level'] = dct_std_lvl.keys()
-    # print(dff_new_mean)
 
     # Расчитывает ср.знач. за года и десятилетия
     for year in sorted(df_new['Year'].unique()):
@@ -679,7 +689,6 @@ def mean_year_decade_to_std_lvl(start_dec, end_dec):
         df_means_std_level['level'] = dct_std_lvl.keys()
         print()
         dff_new_mean_2 = pd.DataFrame()
-        
         
         # ! Перебирает каждую станцию
         for col_name in df_means_year_dec.columns[1:]:
@@ -707,6 +716,7 @@ def mean_year_decade_to_std_lvl(start_dec, end_dec):
 
             # df_means_std_level['level'] = lst_lvl_start
 
+            # TODO ЭТА фукнция вообще нужна?
             # Если в колонке находтся значения декады, то она записывает в отдельную таблицу
             if col_name != f'{parameter}_{min_year}s':
                 df_means_std_level = pd.concat([df_means_std_level, df_mean_std[col_name]], axis=1)
