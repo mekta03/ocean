@@ -20,7 +20,7 @@ Created on Fri Jan 22 13:40:32 2021
 
 TODO Сохранять результат удаления выбросов
 TODO Делать в начале проверку есть ли файл без выбросов
-TODO Добавляет в excel не все станции
+TODO Добавить в график Plotly линию тренда
 
 """
 # =============================================================================
@@ -57,7 +57,7 @@ min_lat, max_lat = 55, 58
 min_long, max_long = 152, 155
 
 min_zz = 300
-min_years, max_years = 2000, 2010
+min_years, max_years = 1980, 2020
 
 # Список условий для фильтрации станций
 boundary_area = '(@min_lat      <=  lat     <=  @max_lat) and ' \
@@ -581,7 +581,6 @@ def mean_for_nst_year_decade(df, year, name_of_decade):
     return df_all_nst_for_year
     # ! Передает df со всеми станциями за один год не стд лвл
 
-    #TODO по каким уровням строится эта таблица
     # print('ПРОВЕРКА')
         # print(df_all_nst_for_year)
         # dct_nst_means = {}
@@ -674,9 +673,7 @@ def mean_year_decade_to_std_lvl(start_dec, end_dec):
         # ! Получает df со всеми станциями за год не стд лвл
 
         df_means_year_dec = mean_for_nst_year_decade(df_new_2, year, min_year)
-        print()
         print('ПРОВЕРКА')
-        print()
         print(df_means_year_dec)
         df_means_std_level = pd.DataFrame()
         df_means_std_level['level'] = dct_std_lvl.keys()
@@ -753,12 +750,7 @@ def mean_year_decade_to_std_lvl(start_dec, end_dec):
     
     print('!!!!!!!!!!!!!!!!!')
     print(dff_new_mean)
-    # Таблица со значениями на заданных уровнях для одной декады (для дальнейшего построения графика средних значений)
-
-    # TODO Скорее всего строка ниже не нужна здесь 
-    # df_for_means_graph_1_dec = df_means_std_level.query('level in @lst_std_lvl_for_means').iloc[:,:-1]
     
-
     if to_excel:
         if make_interpolation:
             excel(dff_new_mean, min_year, f'{filename_inter}/{rslt_std_inter}', 'a')
