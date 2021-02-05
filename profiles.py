@@ -19,6 +19,7 @@ Created on Fri Jan 22 13:40:32 2021
     - построение графика вертикальных профилей.
 
 TODO Сохранять результат удаления выбросов
+TODO Делать в начале проверку есть ли файл без выбросов,  
 """
 # =============================================================================
 import pandas as pd
@@ -54,7 +55,7 @@ min_lat, max_lat = 50, 55
 min_long, max_long = 152, 155
 
 min_zz = 300
-min_years, max_years = 1980, 2020
+min_years, max_years = 1980, 1989
 
 # Список условий для фильтрации станций
 boundary_area = '(@min_lat      <=  lat     <=  @max_lat) and ' \
@@ -62,7 +63,7 @@ boundary_area = '(@min_lat      <=  lat     <=  @max_lat) and ' \
                 '(@min_zz       <=  zz )'
 
 # Выбор исследуемой характеристики/параметра
-parameter = 'temp'
+parameter = 'oxig'
 
 # Удаление выбросов, True - удаляет, False - не удаляет (нужное вписать)
 outliers_removed = False
@@ -116,8 +117,9 @@ create_graph = True
 dct_1 = {i: i + 9 for i in range(0, 31, 10)}
 dct_2 = {i: i + 19 for i in range(30, 31)}
 dct_3 = {i: i + 49 for i in range(50, 251, 50)}
-dct_4 = {i: i + 99 for i in range(300, 1001, 100)}
-dct_std_lvl = {**dct_1, **dct_2, **dct_3, **dct_4}
+dct_4 = {i: i + 99 for i in range(300, 1000, 100)}
+dct_5 = {i: i + 199 for i in range(1000, 1200, 200)}
+dct_std_lvl = {**dct_1, **dct_2, **dct_3, **dct_4, **dct_5}
 
 # Данные из БД по Охотскому морю по исследуемому району
 df_area = df_orig.query(boundary_area)
@@ -126,7 +128,7 @@ dff_1['level'] = np.round(dff_1['level']).astype(int)
 df_area = dff_1.copy()
 
 # Список уровней для построения графика средних значений
-lst_std_lvl_for_means = [200,600,800,1000]
+lst_std_lvl_for_means = [0,200,600,800,1000]
 df_for_means_graph = pd.DataFrame(data={'level':lst_std_lvl_for_means}, index = [i for i in range(len(lst_std_lvl_for_means))])
 
 
