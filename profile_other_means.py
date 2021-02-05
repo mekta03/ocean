@@ -19,7 +19,9 @@ Created on Fri Jan 22 13:40:32 2021
     - построение графика вертикальных профилей.
 
 TODO Сохранять результат удаления выбросов
-TODO Делать в начале проверку есть ли файл без выбросов,  
+TODO Делать в начале проверку есть ли файл без выбросов
+TODO Добавляет в excel не все станции
+
 """
 # =============================================================================
 import pandas as pd
@@ -518,7 +520,7 @@ def interpolation(df, all_cols):
     return df_concat
 
 
-def mean_for_nst_year_decade(df, name_of_decade):
+def mean_for_nst_year_decade(df, year, name_of_decade):
     """
    
     1. Объединяет значения со всех станций за определенный год;\n
@@ -567,6 +569,14 @@ def mean_for_nst_year_decade(df, name_of_decade):
         path_to_xlsx_all_decade = f'{filename_inter}/{all_dec_inter}'
         df_all_nst_for_year = interpolation(df_all_nst_for_year, True)
         df_all_nst_for_year = df_all_nst_for_year.reset_index(drop=True)
+
+    if to_excel:
+        # Записывает значения за декаду в файл с отдельной декадой
+        excel(df_all_nst_for_year, f'{year}', path_to_xlsx_all_nst_and_year, 'a')
+
+        # Записывает значения за декаду в файл только с декадами
+        excel(df_mean_for_all_years, f'{year}', path_to_xlsx_all_decade, 'a')
+
 
     return df_all_nst_for_year
     # ! Передает df со всеми станциями за один год не стд лвл
@@ -663,7 +673,7 @@ def mean_year_decade_to_std_lvl(start_dec, end_dec):
 
         # ! Получает df со всеми станциями за год не стд лвл
 
-        df_means_year_dec = mean_for_nst_year_decade(df_new_2, min_year)
+        df_means_year_dec = mean_for_nst_year_decade(df_new_2, year, min_year)
         print()
         print('ПРОВЕРКА')
         print()
@@ -751,9 +761,9 @@ def mean_year_decade_to_std_lvl(start_dec, end_dec):
 
     if to_excel:
         if make_interpolation:
-            excel(df_means_std_level, min_year, f'{filename_inter}/{rslt_std_inter}', 'a')
+            excel(dff_new_mean, min_year, f'{filename_inter}/{rslt_std_inter}', 'a')
         else:
-            excel(df_means_std_level, min_year, f'{filename_not_inter}/{rslt_std_not_inter}', 'a')
+            excel(dff_new_mean, min_year, f'{filename_not_inter}/{rslt_std_not_inter}', 'a')
 
     return dff_new_mean
 
