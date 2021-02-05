@@ -55,7 +55,7 @@ min_lat, max_lat = 55, 58
 min_long, max_long = 152, 155
 
 min_zz = 300
-min_years, max_years = 1980, 2020
+min_years, max_years = 2000, 2010
 
 # Список условий для фильтрации станций
 boundary_area = '(@min_lat      <=  lat     <=  @max_lat) and ' \
@@ -569,6 +569,8 @@ def mean_for_nst_year_decade(df, name_of_decade):
         df_all_nst_for_year = df_all_nst_for_year.reset_index(drop=True)
 
     return df_all_nst_for_year
+    # ! Передает df со всеми станциями за один год не стд лвл
+
     #TODO по каким уровням строится эта таблица
     # print('ПРОВЕРКА')
         # print(df_all_nst_for_year)
@@ -653,46 +655,50 @@ def mean_year_decade_to_std_lvl(start_dec, end_dec):
     # DataFrame для соединения средних значений с уровней за весь год со всех станций
     dff_new_mean = pd.DataFrame()
     dff_new_mean['level'] = dct_std_lvl.keys()
-    print(dff_new_mean)
+    # print(dff_new_mean)
 
     # Расчитывает ср.знач. за года и десятилетия
     for year in sorted(df_new['Year'].unique()):
         df_new_2 = df_new.query('Year == @year')
+
+        # ! Получает df со всеми станциями за год не стд лвл
+
         df_means_year_dec = mean_for_nst_year_decade(df_new_2, min_year)
         print()
         print('ПРОВЕРКА')
         print()
         print(df_means_year_dec)
         df_means_std_level = pd.DataFrame()
+        df_means_std_level['level'] = dct_std_lvl.keys()
         print()
         dff_new_mean_2 = pd.DataFrame()
-
+        
+        
+        # ! Перебирает каждую станцию
         for col_name in df_means_year_dec.columns[1:]:
             lst_lvl_start = []
             lst_lvl_end = []
             lst_means = []
 
+            # ! Отдельная станция
             dff = df_means_year_dec[['level', col_name]]
 
             for k, v in dct_std_lvl.items():
                 min_lvl, max_lvl = k, v
-
+                
                 df_means_year_dec_for_lvl = dff.query('@min_lvl    <=  level   <=  @max_lvl')
-
                 lst_lvl_start.append(min_lvl)
                 lst_lvl_end.append(max_lvl)
-
                 mean_of_parameter = df_means_year_dec_for_lvl[col_name].mean()
-
                 lst_means.append(mean_of_parameter)
 
-            # Создает таблицу со ср.знач. привиденными к стд.горизонтам
+            # ! Создает таблицу со ср.знач.  СТАНЦИИ  привиденными к стд.горизонтам
             df_mean_std = pd.DataFrame(data={col_name: lst_means},
                                     index=[i for i in range(len(lst_lvl_start))])
 
             df_mean_std = df_mean_std.round(2)
 
-            df_means_std_level['level'] = lst_lvl_start
+            # df_means_std_level['level'] = lst_lvl_start
 
             # Если в колонке находтся значения декады, то она записывает в отдельную таблицу
             if col_name != f'{parameter}_{min_year}s':
@@ -715,13 +721,21 @@ def mean_year_decade_to_std_lvl(start_dec, end_dec):
             min_lvl, max_lvl = k, v
 
             dff_means_year_dec_for_lvl = df_means_std_level.query('@min_lvl    <=  level   <=  @max_lvl')
-            # mean_of_df_means_std_level = dff_means_year_dec_for_lvl.iloc[:, 1:].agg("mean", axis="columns")
-            mean_mean = dff_means_year_dec_for_lvl.iloc[:, 1:].copy()
-            mean_mean_2 = mean_mean.agg("mean", axis="columns")
-            # dff_means_year_dec_for_lvl[f'mean_{year}'] = dff_means_year_dec_for_lvl.iloc[:, 1:].agg("mean", axis="columns")
-            dff_means_year_dec_for_lvl[f'mean_{year}'] = mean_mean_2.round(2)
-            # dff_new_mean = pd.merge(dff_new_mean, dff_means_year_dec_for_lvl[['level',f'mean_{year}']], on='level')
-            dff_new_mean_2 = pd.concat([dff_new_mean_2,dff_means_year_dec_for_lvl[['level',f'mean_{year}']]], axis=0)
+            dff_means_year_dec_for_lvl = dff_means_year_dec_for_lvl.copy()
+            dff_means_year_dec_for_lvl[f'mean_{year}'] = dff_means_year_dec_for_lvl.iloc[:, 1:].agg("mean", axis="columns").round(2)
+            dff_new_mean_2 = pd.concat([dff_new_mean_2, dff_means_year_dec_for_lvl[['level',f'mean_{year}']]], axis=0)
+            
+            # # mean_of_df_means_std_level = dff_means_year_dec_for_lvl.iloc[:, 1:].agg("mean", axis="columns")
+            # mean_mean = dff_means_year_dec_for_lvl.iloc[:, 1:].copy()
+            # # mean_mean_2 = mean_mean.agg("mean", axis="columns")
+            # # dff_means_year_dec_for_lvl[f'mean_{year}'] = dff_means_year_dec_for_lvl.iloc[:, 1:].agg("mean", axis="columns")
+            # naming = f'mean_{year}'
+            # dff_means_year_dec_for_lvl = dff_means_year_dec_for_lvl.copy()
+            # dff_means_year_dec_for_lvl[f'mean_{year}'] = mean_mean.agg("mean", axis="columns").round(2)
+            # # df_round = dff_means_year_dec_for_lvl.loc[:,naming].copy().round(2)
+            # # dff_means_year_dec_for_lvl.loc[:,naming] = df_round.copy()
+            # # dff_new_mean = pd.merge(dff_new_mean, dff_means_year_dec_for_lvl[['level',f'mean_{year}']], on='level')
+            
         print()
         print('HF<sjfbiausdb')
         print(dff_new_mean_2)
@@ -729,18 +743,17 @@ def mean_year_decade_to_std_lvl(start_dec, end_dec):
     
     print('!!!!!!!!!!!!!!!!!')
     print(dff_new_mean)
-    # Таблица со значениями на заданных уровнях для одной декады (для дальнейшего построения графика средних значений) 
-    df_for_means_graph_1_dec = df_means_std_level.query('level in @lst_std_lvl_for_means').iloc[:,:-1]
+    # Таблица со значениями на заданных уровнях для одной декады (для дальнейшего построения графика средних значений)
+
+    # TODO Скорее всего строка ниже не нужна здесь 
+    # df_for_means_graph_1_dec = df_means_std_level.query('level in @lst_std_lvl_for_means').iloc[:,:-1]
     
-
-
 
     if to_excel:
         if make_interpolation:
             excel(df_means_std_level, min_year, f'{filename_inter}/{rslt_std_inter}', 'a')
         else:
-            excel(df_means_std_level, min_year, f'{filename_not_inter}/{rslt_std_not_inter}',
-                  'a')
+            excel(df_means_std_level, min_year, f'{filename_not_inter}/{rslt_std_not_inter}', 'a')
 
     return dff_new_mean
 
@@ -997,8 +1010,7 @@ def graph_profile_of_means():
         
         df[f'{min_year}s'] = df.iloc[:,1:].agg("mean", axis="columns").round(2)
         print(df)
-        print(df[[f'{min_year}s']])
-        print(f'{min_year}')
+        
 
         # x = df[f'{parameter}_{min_year}s'].round(2)
         x = df[f'{min_year}s']
@@ -1010,11 +1022,6 @@ def graph_profile_of_means():
         name_of_decade = f'{min_year}`s'
         fig_graph.add_trace(go.Scatter(x=x, y=y, name=name_of_decade, line_shape='spline'))
         fig_graph.update_traces(hovertemplate="Кислород: %{x}<br>Глубина: %{y}+")
-
-
-
-
-
 
 
     if to_excel:
@@ -1081,6 +1088,7 @@ def graph_profile_of_means():
     
     dff_new = pd.DataFrame(data={'Year':[year for year in range(min_years, max_years+1)]})
     dff_new = pd.merge(dff_new, df_1_stack, on='Year', how='outer')
+    print('ТУТ ВОЗМОЖНО ДЛЯ ГРАФИКА СРЕДНИХ ДАННЫЕ')
     print(dff_new)
 
     if to_excel:
