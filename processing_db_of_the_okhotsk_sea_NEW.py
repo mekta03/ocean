@@ -42,26 +42,11 @@ Created on Tue Dec 22 09:00:57 2020
 import pandas as pd
 import collections
 
-user_name = 'egor'
-# user_name = 'Vladimir.Matveev'
-
-
-# path_project = '/mnt/disk_d/УЧЕБА/Самообучение/Програмирование/Python_Projects/Zuenko/Zuenko/py/test/'
-# path_project = 'D:/УЧЕБА/Самообучение/Програмирование/Python_Projects/Zuenko/Zuenko/py/test/'
-# path_orig = f'{path_project}new_base.csv'
-path_project = 'C:/Users/malyg/Desktop/'
-
 
 # Загружает файл БД по Охотскому морю
-
-# path_orig = f'{path_project}refactoring_base_new.csv'
-path_orig = f'{path_project}600_800.csv'
-
-
-orig_df = pd.read_csv(path_orig, delimiter=',')
-
-# Пустой Датафрейм с заголовками для присоединения изменённых данных
-df_last = pd.DataFrame(data=None, columns=orig_df.columns)
+path_project = '/media/lenovo/D/УЧЕБА/Самообучение/Програмирование/1_Python_Projects/ocean/Profiles_and_means/test/'
+path_orig = f'{path_project}new_orig_copy_without_erorr_in_day.csv'
+orig_df = pd.read_csv(path_orig, sep=',')
 
 # =============================================================================
 # ОКРУГЛЯЮ Значения в таблице
@@ -71,60 +56,86 @@ orig_df[['long', 'lat']] = orig_df[['long', 'lat']].round(2)
 orig_df[['temp', 'sal', 'oxig']] = orig_df[['temp', 'sal', 'oxig']].round(3)
 orig_df = orig_df.sort_values(by=['Year', 'Month', 'Day', 'long', 'lat', 'zz', 'level'])
 
+orig_df = orig_df.rename(columns={'long':'Longitude', 'lat':'Latitude', 'zz':'Bottom_depth', 'level':'Level',
+                                'temp':'Temperature', 'sal':'Salinity', 'oxig':'Oxigen'})
+                                
+columns_name = ['Longitude','Latitude','Year', 'Month', 'Day','Bottom_depth', 'Level','Temperature', 'Salinity', 'Oxigen']
+orig_df = orig_df[columns_name]
+orig_df = orig_df.query('Year > 2010')
 
-def slice_orig_file(df_1, df_2):
+
+# TODO:Поменять имена функций.
+def slice_orig_file(df):
     """
     Выделяет из всей выборки данные по одному дню и дальше обрабатывает их, затем собирает все дни в один файл
     """
-    for year in list(df_1['Year'].unique()):
-        for month in list(df_1.query('Year == @year')['Month'].unique()):
-            for day in list(df_1.query('Year == @year & Month == @month')['Day'].unique()):
-                df_new = df_1.query('Year == @year & Month == @month & Day == @day')  # Выборка по дню
+    df = df.copy()
 
-                # Вызов функции замены ZZ (если она равна 0 или меньше глубины посл. горизонта)
-                df_new = cleaning_sliced_file(df_new)
+    # Пустая таблица для записи обработанных данных  
+    df_all_time = pd.DataFrame()
+    
+    for year in sorted(df['Year'].unique()):
+        for month in sorted(df.query('Year == @year')['Month'].unique()):
+            for day in sorted(df.query('Year == @year & Month == @month')['Day'].unique()):
 
-                # Записывает обработанный день в пустой датафрейм, в котором только заголовки.
-                df_2 = pd.concat([df_2, df_new])
+                # Выборка по дню
+                df_day = df.query('Year == @year and Month == @month and Day == @day')  
+
+                # Замена глубины места, если она равна 0 или меньше глубины посл. горизонта
+                df_day = cleaning_sliced_file(df_day)
+
+                # Объединяет обработанные дни в одну таблицу
+                df_all_time = pd.concat([df_all_time, df_day])
 
                 print(f'{year, month, day}')
 
     # Удаляет полные дубликаты во всем массиве
-    df_2 = df_2.drop_duplicates(['long', 'lat', 'level', 'temp', 'sal', 'oxig'])
-
-    return df_2
+    df_all_time = df_all_time.drop_duplicates(['Longitude','Latitude', 'Level','Temperature', 'Salinity', 'Oxigen'])
+    print(df_all_time.query('5 < Level < 10')[['Year', 'Level']])
+    print('Stop')
+    return df_all_time
 
 
 def cleaning_sliced_file(df):
     """
-    Берет отдельные файлы и меняет в каждом пустой zz на глубину последнего горизонта.
-    В случае если ZZ = 0 или меньше глубины посл.горизонта, меняет ZZ на последний горизонт,
+    Меняет глубину места на глубину последнего горизонта, если она = 0 или < глубины посл.горизонта
     """
+    # TODO по идее можно сгруппировать весь df а не по дням и в нём произвести замену
+    df = df.copy()
 
-    df_clean = df.copy()
-    df_clean['zz'] = df_clean['zz'].fillna(0)  # Заменяет пустые значения ZZ на 0
+    # Заменяет отсутствующие значения глубины места на 0
+    df['Bottom_depth'] = df['Bottom_depth'].fillna(0)  
+    
+    df_all_group = pd.DataFrame()
+    # Группирует по координатам
+    grouped_by_coord = df.groupby(by=['Longitude','Latitude']) 
+    for key in grouped_by_coord.groups.keys():
+        df_1_group = grouped_by_coord.get_group(key).copy()
+        df_1_group = df_1_group.reset_index(drop=True)
+        if df_1_group['Bottom_depth'].max() == 0 or df_1_group['Bottom_depth'].max() < df_1_group['Level'].max():
+            df_1_group['Bottom_depth'] = df_1_group['Level'].max()
+        df_all_group = pd.concat([df_all_group, df_1_group])
 
-    # Заменяет значения ZZ, которые равны 0 или меньше глубины посл. горизонта, на гулбину последнего горизонта
-    grouped_by_coord = df_clean.groupby(by=['long', 'lat'])  # Группирует по координатам
-    replaced_null_df = dict(list(grouped_by_coord))  # Записывает результат в словарь
+    # replaced_null_df = dict(list(grouped_by_coord))  # Записывает результат в словарь
 
-    for k, v in replaced_null_df.items():  # k,v - ключ и значение к словарю, соответственно
-        max = v['level'].max()  # беру за максимум глубину последнего горизонта
-        # Если глубина места меньше глубины последнего горизонта, соответственно заменяет ее
-        for zz in v['zz']:
-            if zz < max:
-                v['zz'].replace(zz, max, inplace=True)
+    # for k, v in replaced_null_df.items():  # k,v - ключ и значение к словарю, соответственно
+    #     max = v['Level'].max()  # беру за максимум глубину последнего горизонта
+    #     # Если глубина места меньше глубины последнего горизонта, соответственно заменяет ее
+    #     for zz in v['Bottom_depth']:
+    #         if zz < max:
+    #             v['Bottom_depth'].replace(zz, max, inplace=True)
 
-    # Достаю из словаря новые значения глубины места zz и в итоге записываю их в отдельный список
-    lst_zz = []
-    for v in replaced_null_df.values():
-        for i in v['zz']:
-            lst_zz.append(i)
+    # # Достаю из словаря новые значения глубины места zz и в итоге записываю их в отдельный список
+    # lst_zz = []
+    # for v in replaced_null_df.values():
+    #     for i in v['Bottom_depth']:
+    #         lst_zz.append(i)
 
-    df_clean['zz'] = lst_zz
+    # df['Bottom_depth'] = lst_zz
 
-    return df_clean
-
+    # return df
+    
+    return df_all_group
 
 def outlier_remove(df):
     """
@@ -134,8 +145,8 @@ def outlier_remove(df):
 
     # Удаление строк с пустыми значениями и нулями в кислороде
     df_outlier = df.copy()
-    df_outlier = df_outlier.dropna(subset=['oxig'])
-    df_outlier = df_outlier.query('oxig != 0')
+    df_outlier = df_outlier.dropna(subset=['Oxigen'])
+    df_outlier = df_outlier.query('Oxigen != 0')
 
     # Удаление выбросов в температуре и солености
     # df_outlier = df_outlier.query('sal < 40 & sal != 0 & temp < 40')
@@ -151,7 +162,7 @@ def rounding_levels(df_1):
 
     res = []  # Пустой список для записи округленные уровни
     df = df_1.copy()  # Копия загружаемого файла
-    df1 = df['level'].copy()  # Выборка только уровня
+    df1 = df['Level'].copy()  # Выборка только уровня
 
     def check_condition(a, b):
         """
@@ -301,37 +312,39 @@ def number_station(df):
 name_csv = 'tested_2.csv'
 
 # Меняет zz и удаляет полные дубликаты
-new_df_last = slice_orig_file(orig_df, df_last)
+# new_df_last = slice_orig_file(orig_df)
 
 # Удаляет пустые значения в t,s,oxig и нулевые значения в Oxig
-new_df_last = outlier_remove(new_df_last)
+# new_df_last = outlier_remove(new_df_last)
 
 # Вынужденная промежуточна запись в csv, без нее не работает округление горизонтов
-new_df_last.to_csv(f'{path_project}/{name_csv}', index=False)
+# new_df_last.to_csv(f'{path_project}/{name_csv}', index=False)
 
 # Считывает промежуточный вариант из csv и записывает его в новую переменную
-for_rounded_df = pd.read_csv(f'{path_project}/{name_csv}', sep=',')
+# for_rounded_df = pd.read_csv(f'{path_project}/{name_csv}', sep=',')
 
 # Окргуляет горизонты
-new_df_last_1 = rounding_levels(for_rounded_df)
+# new_df_last_1 = rounding_levels(for_rounded_df)
 
 # Проставляет номера станций с учетом суточных
-new_df_last_1 = number_station(new_df_last_1)
+# new_df_last_1 = number_station(new_df_last_1)
 
 # Записывает результат в Csv
-new_df_last_1.to_csv(f'{path_project}/{name_csv}', index=False)
+# new_df_last_1.to_csv(f'{path_project}/{name_csv}', index=False)
 
 # Говорит, что Вы молодец!
-print('\n Mission completed! Good job!\n')
-print(new_df_last_1.describe())
+# print('\n Mission completed! Good job!\n')
+# print(new_df_last_1.describe())
 
-"""
+
 if __name__ == '__main__':
-    slice_orig_file(orig_df, df_last)
-    print(df_last)
+    # cleaning_sliced_file(orig_df)
+    slice_orig_file(orig_df)
+    
     # del_dubl_in_month()
     # new_date()
-    # cleaning_sliced_file()
-    # number_station()
+    
+    # number_station() 
+    pass
 
-"""
+
