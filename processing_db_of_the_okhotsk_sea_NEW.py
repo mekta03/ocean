@@ -41,7 +41,7 @@ Created on Tue Dec 22 09:00:57 2020
 
 import pandas as pd
 import collections
-
+import linear_interpolation
 
 # Загружает файл БД по Охотскому морю
 path_project = '/media/lenovo/D/УЧЕБА/Самообучение/Програмирование/1_Python_Projects/ocean/Profiles_and_means/test/'
@@ -61,7 +61,19 @@ orig_df = orig_df.rename(columns={'long':'Longitude', 'lat':'Latitude', 'zz':'Bo
                                 
 columns_name = ['Longitude','Latitude','Year', 'Month', 'Day','Bottom_depth', 'Level','Temperature', 'Salinity', 'Oxigen']
 orig_df = orig_df[columns_name]
-# orig_df = orig_df.query('Year == 1971')
+orig_df = orig_df.query('Year == 1971')
+
+# TODO: Доработать список стд горизонтов
+# Границы уровней
+dct_1 = {i: i + 9 for i in range(0, 31, 10)}
+dct_2 = {i: i + 19 for i in range(30, 31)}
+dct_3 = {i: i + 49 for i in range(50, 251, 50)}
+dct_4 = {i: i + 99 for i in range(300, 1500, 100)}
+dct_5 = {i: i + 249 for i in range(1500, 5000, 250)}
+dct_std_lvl = {**dct_1, **dct_2, **dct_3, **dct_4, **dct_5}
+
+
+
 
 
 # TODO:Поменять имена функций.
@@ -115,8 +127,28 @@ def making_bottom_depth(df):
         df_1_group = df_1_group.reset_index(drop=True)
         if df_1_group['Bottom_depth'].max() == 0 or df_1_group['Bottom_depth'].max() < df_1_group['Level'].max():
             df_1_group['Bottom_depth'] = df_1_group['Level'].max()
-        df_all_group = pd.concat([df_all_group, df_1_group])
+            print(df_1_group['Level'].max())
+        
+        # Делает линейную интерполяцию
+        df_inter = linear_interpolation.interpolation(df_1_group,'Level', [7,8,9])
+        
+        #TODO: Заменить на нормальные стд лвл 
+        # std_lvl = [0,10,20,30,50,75,100,125,150,175,200,225,250,275,300]
+        std_lvl = dct_std_lvl.keys()
+        # Последний горизонт
+        max_lvl = df_inter['Level'].max()
 
+        # Оставляет только стд горизонты и последний горизонт
+        df_inter = df_inter.query('Level in @std_lvl or Level == @max_lvl')
+        
+        # Заполняю непроинтерполированные значения путем дублирования
+        name_cols = ['Longitude','Latitude','Year', 'Month', 'Day','Bottom_depth']
+        df_inter = df_inter.copy()
+        for name in name_cols:
+            df_inter[name]= [df_1_group[name].iloc[0]]*len(df_inter['Level'])
+
+        df_all_group = pd.concat([df_all_group, df_inter])
+    print('Конец')
     return df_all_group
 
 
@@ -160,8 +192,9 @@ def create_number_station(df):
         # Новый номер станции по умолчанию
         nst = df_all_station['Station'].max() + 1
         print(nst)
-    df_all_station.to_csv(f'{path_project}numbers_of_nst.csv', index=False)
+    # df_all_station.to_csv(f'{path_project}numbers_of_nst.csv', index=False)
 
+    return df_all_station
 
 def outlier_remove(df):
     """
@@ -336,13 +369,6 @@ def number_station(df):
     return orig_df
 
 
-
-
-
-
-
-
-
 name_csv = 'tested_2.csv'
 
 # Меняет zz и удаляет полные дубликаты
@@ -371,10 +397,24 @@ name_csv = 'tested_2.csv'
 # print(new_df_last_1.describe())
 
 
-if __name__ == '__main__':
+def main():
+    # TODO: Заменить лвл < 5 на 0
+    # TODO: Удалить выбросы и пропуски
     new_df = making_bottom_depth(orig_df)
+    new_df = new_df.drop_duplicates(['Longitude','Latitude', 'Level','Temperature', 'Salinity', 'Oxigen'])
+    new_df = create_number_station(new_df)
+    print(new_df)
+    print(new_df.describe())
+    new_df = new_df.copy()
+    new_df[['Temperature', 'Salinity', 'Oxigen']] = new_df[['Temperature', 'Salinity', 'Oxigen']].round(2)
+    new_df = new_df[['Station',*columns_name,]]
+    new_df.to_csv(f'{path_project}interpolated_of_nst.csv', index=False)
+
+
+if __name__ == '__main__':
+    main()
     # slice_orig_file(orig_df)
-    create_number_station(new_df)
+    
     # del_dubl_in_month()
     # new_date()
     
