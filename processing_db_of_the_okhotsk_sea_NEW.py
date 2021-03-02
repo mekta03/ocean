@@ -47,8 +47,17 @@ user_name = 'egor'
 
 
 # path_project = '/mnt/disk_d/УЧЕБА/Самообучение/Програмирование/Python_Projects/Zuenko/Zuenko/py/test/'
-path_project = 'D:/УЧЕБА/Самообучение/Програмирование/Python_Projects/Zuenko/Zuenko/py/test/'
-path_orig = f'{path_project}new_base.csv'
+# path_project = 'D:/УЧЕБА/Самообучение/Програмирование/Python_Projects/Zuenko/Zuenko/py/test/'
+# path_orig = f'{path_project}new_base.csv'
+path_project = 'C:/Users/malyg/Desktop/'
+
+
+# Загружает файл БД по Охотскому морю
+
+# path_orig = f'{path_project}refactoring_base_new.csv'
+path_orig = f'{path_project}600_800.csv'
+
+
 orig_df = pd.read_csv(path_orig, delimiter=',')
 
 # Пустой Датафрейм с заголовками для присоединения изменённых данных
