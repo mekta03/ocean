@@ -11,7 +11,7 @@ Created on Tue Dec 22 09:00:57 2020
 
 
     1.  slice_orig_file(исходна БД, куда будет записан результат)
-        cleaning_sliced_file(df)
+        making_bottom_depth(df)
 
         Разбивает оригинальный файл БД  Год --> Месяц --> День:
         - в каждом отдельном файле меняет пустые (и неверные)
@@ -61,7 +61,7 @@ orig_df = orig_df.rename(columns={'long':'Longitude', 'lat':'Latitude', 'zz':'Bo
                                 
 columns_name = ['Longitude','Latitude','Year', 'Month', 'Day','Bottom_depth', 'Level','Temperature', 'Salinity', 'Oxigen']
 orig_df = orig_df[columns_name]
-orig_df = orig_df.query('Year > 2010')
+orig_df = orig_df.query('Year == 1971')
 
 
 # TODO:Поменять имена функций.
@@ -82,7 +82,7 @@ def slice_orig_file(df):
                 df_day = df.query('Year == @year and Month == @month and Day == @day')  
 
                 # Замена глубины места, если она равна 0 или меньше глубины посл. горизонта
-                df_day = cleaning_sliced_file(df_day)
+                df_day = making_bottom_depth(df_day)
 
                 # Объединяет обработанные дни в одну таблицу
                 df_all_time = pd.concat([df_all_time, df_day])
@@ -96,7 +96,7 @@ def slice_orig_file(df):
     return df_all_time
 
 
-def cleaning_sliced_file(df):
+def making_bottom_depth(df):
     """
     Меняет глубину места на глубину последнего горизонта, если она = 0 или < глубины посл.горизонта
     """
@@ -107,7 +107,8 @@ def cleaning_sliced_file(df):
     df['Bottom_depth'] = df['Bottom_depth'].fillna(0)  
     
     df_all_group = pd.DataFrame()
-    # Группирует по координатам
+
+    # Группирует по координатам и в случае необходимости производит замену глубины места для каждой группы.
     grouped_by_coord = df.groupby(by=['Longitude','Latitude']) 
     for key in grouped_by_coord.groups.keys():
         df_1_group = grouped_by_coord.get_group(key).copy()
@@ -116,26 +117,40 @@ def cleaning_sliced_file(df):
             df_1_group['Bottom_depth'] = df_1_group['Level'].max()
         df_all_group = pd.concat([df_all_group, df_1_group])
 
-    # replaced_null_df = dict(list(grouped_by_coord))  # Записывает результат в словарь
-
-    # for k, v in replaced_null_df.items():  # k,v - ключ и значение к словарю, соответственно
-    #     max = v['Level'].max()  # беру за максимум глубину последнего горизонта
-    #     # Если глубина места меньше глубины последнего горизонта, соответственно заменяет ее
-    #     for zz in v['Bottom_depth']:
-    #         if zz < max:
-    #             v['Bottom_depth'].replace(zz, max, inplace=True)
-
-    # # Достаю из словаря новые значения глубины места zz и в итоге записываю их в отдельный список
-    # lst_zz = []
-    # for v in replaced_null_df.values():
-    #     for i in v['Bottom_depth']:
-    #         lst_zz.append(i)
-
-    # df['Bottom_depth'] = lst_zz
-
-    # return df
-    
     return df_all_group
+
+
+def create_number_station(df):
+
+    """
+    Новая версия создания номера станций
+    """    
+    df= df.copy()
+    df_all_station = pd.DataFrame()
+    nst = 1
+    df_grouped = df.groupby(by=['Year', 'Month', 'Day','Longitude','Latitude', 'Bottom_depth'])
+    
+    for key in df_grouped.groups.keys():
+        df_1_group = df_grouped.get_group(key).copy()
+        df_1_group = df_1_group.reset_index(drop=True)
+
+        for lvl in sorted(df_1_group['Level'].unique()):
+            df_lvl = df_1_group.query('Level == @lvl').copy()
+            if nst == 1:
+                num_of_station = len(df_lvl['Level'])+1
+            else:
+                num_of_station = len(df_lvl['Level']) + nst
+
+            df_lvl['Station'] = range(nst, num_of_station)
+            df_all_station = pd.concat([df_all_station, df_lvl])
+            
+        nst = df_all_station['Station'].max() + 1
+        print(nst)
+    df_all_station.to_csv(f'{path_project}numbers_of_nst.csv', index=False)
+
+
+
+
 
 def outlier_remove(df):
     """
@@ -159,7 +174,7 @@ def rounding_levels(df_1):
     Функция замены исходных уровней на округленные
 
     """
-
+    # TODO вместо замены нужно произвести интерполяцию и выборку лишь по стандартным уровням
     res = []  # Пустой список для записи округленные уровни
     df = df_1.copy()  # Копия загружаемого файла
     df1 = df['Level'].copy()  # Выборка только уровня
@@ -230,15 +245,16 @@ def number_station(df):
     Добавляет номер станции, с учетом номера станции в предыдущий день (сквозная нумерация)
     """
     orig_df = df.copy()
+    # TODO: Вместо списка с нст создать арифм прогрессию и через next вызвать след номер станции
     global_lst_nst = []  # Пустой список для записи в него номеров станций
     nst = 1  # Начальный номер станции
 
-    for year in list(orig_df['Year'].unique()):
-        for month in list(orig_df.query('Year == @year')['Month'].unique()):
-            for day in list(orig_df.query('Year == @year & Month == @month')['Day'].unique()):
+    for year in sorted(orig_df['Year'].unique()):
+        for month in sorted(orig_df.query('Year == @year')['Month'].unique()):
+            for day in sorted(orig_df.query('Year == @year and Month == @month')['Day'].unique()):
                 # Выборка по дню
-                df_new = orig_df.query('Year == @year & Month == @month & Day == @day')
-
+                df_new = orig_df.query('Year == @year and Month == @month and Day == @day')
+                # TODO: А если сгруппировать сразу по году, месяц, день, координаты
                 # Группирую по координатам и уровню
                 grouped_df = df_new.groupby(by=['long', 'lat', 'zz', 'level'])
 
@@ -309,6 +325,13 @@ def number_station(df):
     return orig_df
 
 
+
+
+
+
+
+
+
 name_csv = 'tested_2.csv'
 
 # Меняет zz и удаляет полные дубликаты
@@ -338,9 +361,9 @@ name_csv = 'tested_2.csv'
 
 
 if __name__ == '__main__':
-    # cleaning_sliced_file(orig_df)
-    slice_orig_file(orig_df)
-    
+    new_df = making_bottom_depth(orig_df)
+    # slice_orig_file(orig_df)
+    create_number_station(new_df)
     # del_dubl_in_month()
     # new_date()
     
