@@ -61,7 +61,7 @@ orig_df = orig_df.rename(columns={'long':'Longitude', 'lat':'Latitude', 'zz':'Bo
                                 
 columns_name = ['Longitude','Latitude','Year', 'Month', 'Day','Bottom_depth', 'Level','Temperature', 'Salinity', 'Oxigen']
 orig_df = orig_df[columns_name]
-orig_df = orig_df.query('Year == 1971')
+# orig_df = orig_df.query('Year == 1971')
 
 
 # TODO:Поменять имена функций.
@@ -124,32 +124,43 @@ def create_number_station(df):
 
     """
     Новая версия создания номера станций
-    """    
+    Группирует по дате, координатам и глубине места,
+    каждую группу фильтрует по уровням и прописывает номер станции
+    """
+    # TODO:Проверить получившуюся базу с текущей базой
+     
     df= df.copy()
     df_all_station = pd.DataFrame()
+
+    # Номер станции по умолчанию (с которого начинается отсчет)
     nst = 1
     df_grouped = df.groupby(by=['Year', 'Month', 'Day','Longitude','Latitude', 'Bottom_depth'])
     
     for key in df_grouped.groups.keys():
+        # Рассматривается поочередо каждая группа
         df_1_group = df_grouped.get_group(key).copy()
         df_1_group = df_1_group.reset_index(drop=True)
 
+        # Выборка по каждому уровню в текущей выборке
         for lvl in sorted(df_1_group['Level'].unique()):
             df_lvl = df_1_group.query('Level == @lvl').copy()
+            
+            # Расчет номера последней станции для этого уровня 
             if nst == 1:
                 num_of_station = len(df_lvl['Level'])+1
             else:
                 num_of_station = len(df_lvl['Level']) + nst
 
+            # Запись для этого уровня номеров станций
             df_lvl['Station'] = range(nst, num_of_station)
+
+            # Объединение полученных станции
             df_all_station = pd.concat([df_all_station, df_lvl])
-            
+        
+        # Новый номер станции по умолчанию
         nst = df_all_station['Station'].max() + 1
         print(nst)
     df_all_station.to_csv(f'{path_project}numbers_of_nst.csv', index=False)
-
-
-
 
 
 def outlier_remove(df):
