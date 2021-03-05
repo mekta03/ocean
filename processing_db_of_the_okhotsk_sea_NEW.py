@@ -45,7 +45,8 @@ import linear_interpolation
 
 # Загружает файл БД по Охотскому морю
 path_project = '/mnt/disk_d/УЧЕБА/Самообучение/Програмирование/1_Python_Projects/ocean/Profiles_and_means/test/'
-path_orig = f'{path_project}new_orig_copy_without_erorr_in_day.csv'
+# path_orig = f'{path_project}new_orig_copy_without_erorr_in_day.csv'
+path_orig = f'{path_project}just_for_test.csv'
 orig_df = pd.read_csv(path_orig, sep=',')
 
 # =============================================================================
@@ -64,8 +65,8 @@ orig_df = orig_df[columns_name]
 orig_df = orig_df.sort_values(by=['Year', 'Month', 'Day', 'Longitude', 'Latitude', 'Bottom_depth', 'Level'])
 
 
-min_year = 2014
-max_year = 2015
+min_year = 1930
+max_year = 1931
 orig_df = orig_df.query('@min_year <= Year <= @max_year')
 
 # Границы уровней
@@ -77,65 +78,77 @@ dct_5 = {i: i + 249 for i in range(1500, 5000, 250)}
 dct_std_lvl = {**dct_1, **dct_2, **dct_3, **dct_4, **dct_5}
 
 
-# TODO:Поменять имена функций.
-
-# TODO если посл.горизонт меньше 10, но при этом есть ноль - удалить его
-# TODO если нет глубины места, и посл горизонт меньше 10 либо только 0, то и глубина места будет 0
-
-# TODO Все же добавить обратно округление горизонтов, некоторых 
-# ! Так как есть такие горизонты как 96м, и он является посл. гориз.
-# ? а может быть и нет, т.к. при построении профилей или средних будут использоваться диапазоны значений,
-# ? а не четкие уровни (ВОЗМОЖНО), НО
-# ? будет ли в ODV например при выборке на 100м использоваться 96м или же нет 
 
 
-def replacing_lvl_less_5m(df):
+def replacing_lvl_less_5m_and_more_5m(df):
     """
-    Заменяет значение уровня <= 4 м на 0 м
+    Заменяет значение уровня <= 5 м на 0 м,  если нет изначально 0м
+    Заменяет значение уровня >  5 м на 10 м, если нет изначально 10м    
     """
     
-    df_with_lvl_more_5m = df.query('Level >= 5').copy()
-    df_with_lvl_less_5m = df.query('Level <= 4').copy()
+    new_df = df.copy()
 
-    df_with_lvl_less_5m = df_with_lvl_less_5m.copy()
-    df_with_lvl_less_5m['Level'] = 0
+    if 0 <= new_df['Level'].min() < 10:
 
-    df_all_lvl_new = pd.concat([df_with_lvl_more_5m, df_with_lvl_less_5m])
+        if new_df['Level'].min() == 0:
+            df_less_5m = new_df.query('Level == 0').copy()
+
+        else:
+            # Ближайшее к 0м значение уровня заменяет на 0 
+            df_less_5m = new_df.query('Level <= 5').copy()
+            df_less_5m['Level'] = 0
+            df_less_5m = df_less_5m.head(1)
+            
+
+        df_more_5m = new_df.query('Level > 5').copy()
+
+        if 5 < new_df['Level'].max() < 10:
+            # Ближайшее к 10м значение уровня заменяет на 10
+            new_df.replace(new_df['Level'].max(), 10, inplace=True)
+            df_more_5m = new_df.query('Level > 5').copy()
+            df_more_5m = df_more_5m.tail(1)
+
+        df_all_lvl = pd.concat([df_more_5m, df_less_5m])
+    
+    else:
+        df_all_lvl = new_df.copy()
     
     cols_for_sort = ['Year', 'Month', 'Day', 'Longitude', 'Latitude', 'Bottom_depth', 'Level']
-    df_all_lvl_new = df_all_lvl_new.sort_values(by=cols_for_sort)    
-    
-    return df_all_lvl_new
+    df_all_lvl = df_all_lvl.sort_values(by=cols_for_sort)   
+
+    return df_all_lvl
 
 
-def bottom_depth_for_nst(df):
+def create_lvl_and_bottom_depth(df):
     """
-    # TODO Добавить описание этой функции
+    Вызывает функцию округления уровней около 0м и около 10м.\n
+    Производит линейную интерполяцию.\n
+    Производит замену глубины места.\n
+    Фильтрует на стд горизонты и посл горизонт.\n
+
     """
     df = df.copy()
     
     df_all_nst = pd.DataFrame()
+    
     counter = 1
 
+    # Перебор каждой станции
     for nst in sorted(df['Station'].unique()):
         print('Осталось проинтерполировать станций ', len(df['Station'].unique())-counter)
         counter += 1
+
         df_nst = df.query('Station == @nst')
 
-        # Если глубина места=0 или меньше глубины посл.горизонта, меняет ее на глубину посл.горизонта
-        if df_nst['Bottom_depth'].max() == 0 or df_nst['Bottom_depth'].max() < df_nst['Level'].max():
-            df_nst = df_nst.copy()
-            df_nst['Bottom_depth'] = df_nst['Level'].max()
+        # ===================================================================
+        # Округление уровней около 0 и около 10 м
+        # ===================================================================
+        df_nst = replacing_lvl_less_5m_and_more_5m(df_nst)
 
-        # # TODO Если нет 0, но есть около 0 то заменить его на 0
-        # # !ПРОБЛЕМА если суточные станции, у одной есть ноль, а другой вместо нуля (например 3), то
-        # # ! этот горизонт будет приписан к первой станции, а затем соотвественно удален
 
-        if 0 not in df_nst['Level'].unique():
-            print('replacing')
-            df_nst = replacing_lvl_less_5m(df_nst)
-            
-        # Производит линейную интерполяцию
+        # ===================================================================
+        #! Линейная интерполяция
+        # ===================================================================
         df_inter = linear_interpolation.interpolation(df_nst,'Level', [7,8,9])
 
         # Заполнение непроинтерполированных значений путем их дублирования
@@ -143,9 +156,20 @@ def bottom_depth_for_nst(df):
 
         for name in name_cols:
             df_inter[name]= [df_nst[name].iloc[0]]*len(df_inter['Level'])
-            print()
 
-        # Оставляет только стд горизонты и последний горизонт
+
+        # ===================================================================
+        #! Замена глубины места
+        # ===================================================================
+        # Если глубина места=0 или меньше глубины посл.горизонта, меняет ее на глубину посл.горизонта
+        if df_inter['Bottom_depth'].max() == 0 or df_inter['Bottom_depth'].max() < df_inter['Level'].max():
+            df_inter = df_inter.copy()
+            df_inter['Bottom_depth'] = df_inter['Level'].max()
+
+
+        # ===================================================================
+        #! Фильтрация по стандартным горизонтам и последнему горизонту
+        # ===================================================================
         std_lvl = dct_std_lvl.keys()
 
         # Последний горизонт
@@ -154,6 +178,7 @@ def bottom_depth_for_nst(df):
 
         df_inter = df_inter.query('Level in @lst_lvl')
 
+        # Объединение всех станций в одну таблицу
         df_all_nst = pd.concat([df_all_nst, df_inter])
 
     return df_all_nst
@@ -165,24 +190,24 @@ def create_number_station(df):
     - группирует по дате, координатам и глубине места,\n
     каждую группу фильтрует по уровням и прописывает номер станции\n
     """
-    print('\n Создаю номера станций\n')
-    
+   
     df = df.copy()
 
     df['Bottom_depth'] = df['Bottom_depth'].fillna(0)
+
+    # Эта группировка только для вывода на печать хода выполнения программы
     df_grouped_1 = df.groupby(by=['Year', 'Month', 'Day','Longitude','Latitude', 'Bottom_depth'])
-    
     counter = 1
     
     df_all_station = pd.DataFrame()
 
     nst = 1
+
     for year in sorted(df['Year'].unique()):
         for month in sorted(df.query('Year == @year')['Month'].unique()):
             for day in sorted(df.query('Year == @year and Month == @month')['Day'].unique()):
-                df_day = df.query('Year == @year and Month == @month and Day == @day').copy()
 
-                df_day = df_day.copy()
+                df_day = df.query('Year == @year and Month == @month and Day == @day').copy()
 
                 df_grouped = df_day.groupby(by=['Longitude','Latitude', 'Bottom_depth'])
                 
@@ -192,15 +217,6 @@ def create_number_station(df):
 
                     # Рассматривается поочередо каждая группа
                     df_1_group = df_grouped.get_group(key).copy()
-                    
-                    # Оставляет только стд горизонты и последний горизонт
-                    std_lvl = dct_std_lvl.keys()
-
-                    # Последний горизонт
-                    max_lvl = df_1_group['Level'].max()
-                    lst_lvl = [*std_lvl, max_lvl]
-                            
-                    df_all_lvl =pd.DataFrame()
 
                     # Выборка по каждому уровню в текущей группе
                     for lvl in sorted(df_1_group['Level'].unique()):
@@ -214,16 +230,13 @@ def create_number_station(df):
 
                         # Запись для этого уровня номеров станций
                         df_lvl['Station'] = range(nst, num_of_station)
+                        
+                        df_all_station = pd.concat([df_all_station, df_lvl])
 
-                        df_all_lvl = pd.concat([df_all_lvl, df_lvl])
-
-                    # Объединение полученных станции
-                    df_all_station = pd.concat([df_all_station, df_all_lvl])
-                
                     # Новый номер станции по умолчанию
                     nst = df_all_station['Station'].max() + 1
                     print(nst)
-    # df_all_station.to_csv(f'{path_project}numbers_of_nst.csv', index=False)
+    # df_all_station.to_csv(f'{path_project}just_for_test_numbers_of_nst.csv', index=False)
 
     return df_all_station
 
@@ -403,10 +416,11 @@ def number_station(df):
 def main():
     # TODO: Проверить получившуюся базу с текущей базой
     # TODO: Удалить выбросы и пропуски
-
-    new_df = orig_df.drop_duplicates(['Longitude','Latitude', 'Level','Temperature', 'Salinity', 'Oxigen'])
+    # TODO: Добавил в удаление дубликатов услови по Bottom_depth надо попробоват поиграть с этим
+    # TODO: ЗАмена глубины места из интернета
+    new_df = orig_df.drop_duplicates(['Longitude','Latitude', 'Bottom_depth' ,'Level','Temperature', 'Salinity', 'Oxigen'])
     new_df = create_number_station(new_df)
-    new_df = bottom_depth_for_nst(new_df)
+    new_df = create_lvl_and_bottom_depth(new_df)
     print(new_df)
     print(new_df.describe())
     new_df = new_df.copy()
